@@ -1,25 +1,36 @@
 import React from 'react';
 import { Image, StyleSheet, Platform, View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-
+import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
-  const router = useRouter(); // Inicjalizacja routera
+  const router = useRouter(); // Initialize router
 
   return (
-    <ThemedView style={styles.container}>
+    <ParallaxScrollView
+      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+      headerImage={
+        <Image
+          source={require('@/assets/images/partial-react-logo.png')}
+        />
+      }
+    >
+      {/* Title */}
       <ThemedText type="title" style={styles.title}>Fistaszki</ThemedText>
-      <ThemedText style={styles.space}></ThemedText> {/* Some empty space */}
-      {/* Learn */}
+
+      {/* Space between title and buttons */}
+      <ThemedView style={styles.space} />
+
+      {/* Learn Button */}
       <TouchableOpacity
         style={[styles.button, { backgroundColor: '#FACFFF' }]}
         onPress={() => router.push('/explore')}
       >
         <View style={styles.buttonContent}>
           <Image
-            source={require('@/assets/images/partial-react-logo.png')} // Zmieniamy na odpowiednią ikonę
+            source={require('@/assets/images/partial-react-logo.png')} // Replace with the correct icon
             style={styles.buttonImage}
           />
           <View style={styles.textContainer}>
@@ -29,14 +40,14 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
 
-      {/* Edit */}
+      {/* Edit Button */}
       <TouchableOpacity
         style={[styles.button, { backgroundColor: '#BACDFF' }]}
         onPress={() => router.push('/editFlashcards')}
       >
         <View style={styles.buttonContent}>
           <Image
-            source={require('@/assets/images/partial-react-logo.png')} // Zmieniamy na odpowiednią ikonę
+            source={require('@/assets/images/partial-react-logo.png')} // Replace with the correct icon
             style={styles.buttonImage}
           />
           <View style={styles.textContainer}>
@@ -45,24 +56,26 @@ export default function HomeScreen() {
           </View>
         </View>
       </TouchableOpacity>
-    </ThemedView>
+    </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  //Basic container
+  // Basic container
   container: {
     padding: 16,
   },
-  //Basic container
+  // Title text style, centered
   title: {
     textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
-  // Some space from top
+  // Space between title and buttons
   space: {
     marginTop: 20,
   },
-  //Navigation button
+  // Button style
   button: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -72,26 +85,26 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     width: '100%',
   },
-    buttonContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      width: '100%',
-    },
-    buttonImage: {
-      width: 50,
-      height: 50,
-      marginRight: 16,
-    },
-    textContainer: {
-      flex: 1,
-    },
-    buttonTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#000000',
-    },
-    buttonDescription: {
-      fontSize: 14,
-      color: '#111111',
-    },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  buttonImage: {
+    width: 50,
+    height: 50,
+    marginRight: 16,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  buttonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
+  buttonDescription: {
+    fontSize: 14,
+    color: '#111111',
+  },
 });
