@@ -1,91 +1,114 @@
+// editFlashcard.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { saveFlashcard, getFlashcard, deleteFlashcard } from '../../database/flashcardDB';
-import { getAllFlashcards } from '../../database/flashcardDB';
-
-interface Flashcard {
-  id: number;
-  topicId: number;
-  front: string;
-  frontHint?: string;
-  back: string;
-  backInfo?: string;
-}
+import { Flashcard } from '../../database/flashcardDB';
+import { saveFlashcard, getFlashcard, deleteFlashcard, getAllFlashcards } from '../../database/flashcardDB';
 
 export default function EditFlashcardScreen() {
   const router = useRouter();
-  const { id, topicId } = useLocalSearchParams<{ id: string; topicId: string }>();
-  
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
-  const [flashcard, setFlashcard] = useState<Flashcard>({
-    id: 0,
-    topicId: topicId ? parseInt(topicId) : 0,
+  const params = useLocalSearchParams();
+  const id = params.id as string;
+  const topicId = params.topicId as string;
+
+  // Initialize state with function to handle prop changes
+  const [flashcard, setFlashcard] = useState({
+    id: parseInt(id || '0'),
+    topicId: parseInt(topicId || '0'),
     front: '',
     frontHint: '',
     back: '',
     backInfo: ''
   });
 
-  const getFlashcards = async () => {
-    try {
-      const loadedFlashcards = await getAllFlashcards();
-      setFlashcards(loadedFlashcards);
-      console.log(flashcards);
-      return loadedFlashcards;
-    } catch (e) {
-      console.error('Error loading cards:', e);
-      return [];
-    }
-  };
-
+  const [allFlashcards, setAllFlashcards] = useState<Flashcard[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Load existing flashcard if editing
+
+  // Reset form when ID changes to 0 (new flashcard)
   useEffect(() => {
-    const loadFlashcard = async () => {
-      if (id && id !== '0') {
-        setIsLoading(true);
-        try {
+    if (parseInt(id) === 0) {
+      setFlashcard({
+        id: 0,
+        topicId: parseInt(topicId || '0'),
+        front: '',
+        frontHint: '',
+        back: '',
+        backInfo: ''
+      });
+    }
+  }, [id, topicId]);
+
+  // Load data when component mounts or ID changes
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Load existing flashcard if editing
+        if (id && id !== '0') {
           const loadedFlashcard = await getFlashcard(parseInt(id));
           if (loadedFlashcard) {
             setFlashcard({
-              ...loadedFlashcard,
+              id: loadedFlashcard.id,
+              topicId: loadedFlashcard.topicId,
+              front: loadedFlashcard.front,
               frontHint: loadedFlashcard.frontHint || '',
+              back: loadedFlashcard.back,
               backInfo: loadedFlashcard.backInfo || ''
             });
           }
-        } catch (err) {
-          setError('Failed to load flashcard');
-          console.error(err);
-        } finally {
-          setIsLoading(false);
         }
+
+        // Always load all flashcards
+        const flashcards = await getAllFlashcards();
+        setAllFlashcards(flashcards);
+      } catch (err) {
+        setError('Failed to load data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
       }
     };
-    
-    loadFlashcard();
+
+    loadData();
   }, [id]);
 
-  const handleChange = (field: keyof Flashcard, value: string) => {
-    setFlashcard(prev => ({ 
-      ...prev, 
-      [field]: value 
-    }));
+  const handleChange = (field: keyof typeof flashcard, value: string) => {
+    setFlashcard(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
+    if (!flashcard.front.trim() || !flashcard.back.trim()) {
+      setError('Front and back content are required');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // If it's a new flashcard, generate a new ID
-      const flashcardToSave = {
-        ...flashcard,
-        id: flashcard.id === 0 ? Date.now() : flashcard.id
-      };
-      
+      // Create new object to avoid state mutation
+      const flashcardToSave = { ...flashcard };
+
+      // Generate new ID only for new flashcards
+      if (flashcardToSave.id === 0) {
+        flashcardToSave.id = Date.now();
+      }
+
       await saveFlashcard(flashcardToSave);
-      router.back(); // Navigate back after saving
+      
+      // Refresh the list and clear form for new entries
+      if (flashcard.id === 0) {
+        setFlashcard(prev => ({
+          ...prev,
+          id: 0,
+          front: '',
+          frontHint: '',
+          back: '',
+          backInfo: ''
+        }));
+      }
+
+      const updatedFlashcards = await getAllFlashcards();
+      setAllFlashcards(updatedFlashcards);
     } catch (err) {
       setError('Failed to save flashcard');
       console.error(err);
@@ -93,17 +116,16 @@ export default function EditFlashcardScreen() {
       setIsLoading(false);
     }
   };
-  
-  const handleDelete = async () => {
-    if (flashcard.id === 0) {
-      router.back(); // Just go back if it's a new unsaved flashcard
-      return;
-    }
-    
+
+  const handleDelete = async (cardId: number) => {
     setIsLoading(true);
     try {
-      await deleteFlashcard(flashcard.id);
-      router.back();
+      await deleteFlashcard(cardId);
+      const updatedFlashcards = await getAllFlashcards();
+      setAllFlashcards(updatedFlashcards);
+      if (cardId === flashcard.id) {
+        router.back();
+      }
     } catch (err) {
       setError('Failed to delete flashcard');
       console.error(err);
@@ -111,13 +133,14 @@ export default function EditFlashcardScreen() {
       setIsLoading(false);
     }
   };
-  
+
   if (isLoading) return <View style={styles.container}><Text>Loading...</Text></View>;
-  
+
   return (
     <ScrollView style={styles.container}>
       {error && <Text style={styles.error}>{error}</Text>}
-      
+
+      {/* Input Fields (existing code) */}
       <Text style={styles.label}>Front (Question)</Text>
       <TextInput
         style={styles.input}
@@ -156,16 +179,36 @@ export default function EditFlashcardScreen() {
       
       <View style={styles.buttonContainer}>
         <Button title="Save" onPress={handleSave} disabled={isLoading} />
-        <Button title="Read Cards" onPress={getFlashcards} disabled={isLoading}/>
         {flashcard.id !== 0 && (
           <Button 
-            title="Delete" 
-            onPress={handleDelete} 
+            title="Delete This Card" 
+            onPress={() => handleDelete(flashcard.id)} 
             disabled={isLoading}
             color="red"
           />
         )}
       </View>
+
+      {/* Flashcards List */}
+      <Text style={styles.sectionTitle}>All Flashcards</Text>
+      {allFlashcards.length === 0 ? (
+        <Text style={styles.noCardsText}>No flashcards found</Text>
+      ) : (
+        allFlashcards.map((card) => (
+          <View key={card.id} style={styles.cardContainer}>
+            <View style={styles.cardContent}>
+              <Text style={styles.cardText}>Front: {card.front}</Text>
+              <Text style={styles.cardText}>Back: {card.back}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDelete(card.id)}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
     </ScrollView>
   );
 }
@@ -189,15 +232,54 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
     minHeight: 80,
+    marginBottom: 12,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 24,
-    marginBottom: 40,
+    marginVertical: 24,
   },
   error: {
     color: 'red',
     marginBottom: 12,
-  }
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  cardContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  cardContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  cardText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 4,
+  },
+  deleteButton: {
+    backgroundColor: '#ff4444',
+    borderRadius: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  noCardsText: {
+    color: '#666',
+    textAlign: 'center',
+    marginVertical: 16,
+  },
 });

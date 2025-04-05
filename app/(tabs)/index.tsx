@@ -10,11 +10,27 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>Fistaszki</ThemedText>
-      <ThemedText style={styles.space}></ThemedText> {/* Some empty space */}
-      {/* Learn */}
+      <ThemedText type="title">Welcome!</ThemedText>
+      
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
+        <ThemedText>
+          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
+          Press{' '}
+          <ThemedText type="defaultSemiBold">
+            {Platform.select({
+              ios: 'cmd + d',
+              android: 'cmd + m',
+              web: 'F12'
+            })}
+          </ThemedText>{' '}
+          to open developer tools.
+        </ThemedText>
+      </ThemedView>
+
+      {/* Przycisk Explore */}
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#FACFFF' }]}
+        style={styles.button}
         onPress={() => router.push('/explore')}
       >
         <View style={styles.buttonContent}>
@@ -23,15 +39,15 @@ export default function HomeScreen() {
             style={styles.buttonImage}
           />
           <View style={styles.textContainer}>
-            <Text style={styles.buttonTitle}>Learn</Text>
-            <Text style={styles.buttonDescription}>Go learn!</Text>
+            <Text style={styles.buttonTitle}>Explore</Text>
+            <Text style={styles.buttonDescription}>Go to explore</Text>
           </View>
         </View>
       </TouchableOpacity>
 
-      {/* Edit */}
+      {/* Przycisk Edit */}
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#BACDFF' }]}
+        style={styles.button}
         onPress={() => router.push('/editFlashcards')}
       >
         <View style={styles.buttonContent}>
@@ -50,48 +66,43 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  //Basic container
   container: {
     padding: 16,
   },
-  //Basic container
-  title: {
-    textAlign: 'center',
+  stepContainer: {
+    gap: 8,
+    marginBottom: 8,
   },
-  // Some space from top
-  space: {
-    marginTop: 20,
-  },
-  //Navigation button
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 18,
+    backgroundColor: '#A1CEDC', // Kolor tła przycisku
+    borderRadius: 15, // Zaokrąglone rogi
+    paddingHorizontal: 16, // Odstępy od brzegów
+    paddingVertical: 12, // Wysokość przycisku
+    marginBottom: 16, // Odstęp między przyciskami
+    width: '100%', // Pełna szerokość
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
     width: '100%',
   },
-    buttonContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      width: '100%',
-    },
-    buttonImage: {
-      width: 50,
-      height: 50,
-      marginRight: 16,
-    },
-    textContainer: {
-      flex: 1,
-    },
-    buttonTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#000000',
-    },
-    buttonDescription: {
-      fontSize: 14,
-      color: '#111111',
-    },
+  buttonImage: {
+    width: 50, // Szerokość obrazu
+    height: 50, // Wysokość obrazu
+    marginRight: 16, // Odstęp między obrazem a tekstem
+  },
+  textContainer: {
+    flex: 1,
+  },
+  buttonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff', // Kolor tekstu
+  },
+  buttonDescription: {
+    fontSize: 14,
+    color: '#ffffff', // Kolor tekstu
+  },
 });
