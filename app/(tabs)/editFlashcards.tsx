@@ -1,9 +1,13 @@
 // editFlashcard.tsx
 import React, { useState, useEffect } from 'react';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Flashcard } from '../../database/flashcardDB';
 import { saveFlashcard, getFlashcard, deleteFlashcard, getAllFlashcards } from '../../database/flashcardDB';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
+
 
 export default function EditFlashcardScreen() {
   const router = useRouter();
@@ -134,14 +138,15 @@ export default function EditFlashcardScreen() {
     }
   };
 
-  if (isLoading) return <View style={styles.container}><Text>Loading...</Text></View>;
+  if (isLoading) return <ThemedView style={styles.container}><ThemedText>Loading...</ThemedText></ThemedView>;
 
   return (
-    <ScrollView style={styles.container}>
-      {error && <Text style={styles.error}>{error}</Text>}
+    <ParallaxScrollView 
+      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }} headerImage={<></>}   >
+      {error && <ThemedText style={styles.error}>{error}</ThemedText>}
 
       {/* Input Fields (existing code) */}
-      <Text style={styles.label}>Front (Question)</Text>
+      <ThemedText style={styles.label}>Front (Question)</ThemedText>
       <TextInput
         style={styles.input}
         value={flashcard.front}
@@ -150,7 +155,7 @@ export default function EditFlashcardScreen() {
         multiline
       />
       
-      <Text style={styles.label}>Front Hint (Optional)</Text>
+      <ThemedText style={styles.label}>Front Hint (Optional)</ThemedText>
       <TextInput
         style={styles.input}
         value={flashcard.frontHint || ''}
@@ -159,7 +164,7 @@ export default function EditFlashcardScreen() {
         multiline
       />
       
-      <Text style={styles.label}>Back (Answer)</Text>
+      <ThemedText style={styles.label}>Back (Answer)</ThemedText>
       <TextInput
         style={styles.input}
         value={flashcard.back}
@@ -168,7 +173,7 @@ export default function EditFlashcardScreen() {
         multiline
       />
       
-      <Text style={styles.label}>Additional Info (Optional)</Text>
+      <ThemedText style={styles.label}>Additional Info (Optional)</ThemedText>
       <TextInput
         style={styles.input}
         value={flashcard.backInfo || ''}
@@ -179,20 +184,12 @@ export default function EditFlashcardScreen() {
       
       <View style={styles.buttonContainer}>
         <Button title="Save" onPress={handleSave} disabled={isLoading} />
-        {flashcard.id !== 0 && (
-          <Button 
-            title="Delete This Card" 
-            onPress={() => handleDelete(flashcard.id)} 
-            disabled={isLoading}
-            color="red"
-          />
-        )}
       </View>
 
       {/* Flashcards List */}
-      <Text style={styles.sectionTitle}>All Flashcards</Text>
+      <ThemedText style={styles.sectionTitle}>All Flashcards</ThemedText>
       {allFlashcards.length === 0 ? (
-        <Text style={styles.noCardsText}>No flashcards found</Text>
+        <ThemedText style={styles.noCardsText}>No flashcards found</ThemedText>
       ) : (
         allFlashcards.map((card) => (
           <View key={card.id} style={styles.cardContainer}>
@@ -209,7 +206,7 @@ export default function EditFlashcardScreen() {
           </View>
         ))
       )}
-    </ScrollView>
+    </ParallaxScrollView>
   );
 }
 
@@ -233,6 +230,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 80,
     marginBottom: 12,
+    color: '#f8f8f8',
   },
   buttonContainer: {
     flexDirection: 'row',
