@@ -1,110 +1,191 @@
-import { useState } from 'react';
-import { StyleSheet, Image, Platform, Button, TextInput } from 'react-native';
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// editFlashcard.tsx
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { saveFlashcard, getFlashcard, deleteFlashcard } from '../../database/flashcardDB';
+import { getAllFlashcards } from '../../database/flashcardDB';
 
-export default function EditFlashcardsScreen() {
-  const [topic, setTopic] = useState('');
-  const [description, setDescription] = useState('');
-
-  const addFlashCard = async () => {
+export default function EditFlashcardScreen() {
+  const router = useRouter();
+  const { id, topicId } = useLocalSearchParams<{ id: string; topicId: string }>();
+  
+  const [flashcard, setFlashcard] = useState({
+    id: parseInt(id || '0'),
+    topicId: parseInt(topicId || '0'),
+    front: '',
+    frontHint: '',
+    back: '',
+    backInfo: ''
+  });
+  
+const getFlashcards = async () => {
     try {
-      const newCard = {
-        id: Date.now().toString(),
-        topic,
-        description,
-      };
-
-      // Get existing cards
-      const existingCards = await AsyncStorage.getItem('flashcards');
-      const cardsArray = existingCards ? JSON.parse(existingCards) : [];
-
-      // Add new card
-      cardsArray.push(newCard);
-
-      // Save back to storage
-      await AsyncStorage.setItem('flashcards', JSON.stringify(cardsArray));
-
-      // Clear inputs
-      setTopic('');
-      setDescription('');
-    } catch (e) {
-      console.error('Error saving card:', e);
-    }
-  };
-
-  const getFlashcards = async () => {
-    try {
-      const cards = await AsyncStorage.getItem('flashcards');
-      console.log(cards);
-      return cards ? JSON.parse(cards) : [];
+      const flashcards = await getAllFlashcards();
+      console.log(flashcards);
+      return flashcards;
     } catch (e) {
       console.error('Error loading cards:', e);
       return [];
     }
   };
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Load existing flashcard if editing
+  useEffect(() => {
+    const loadFlashcard = async () => {
+      if (id && id !== '0') {
+        setIsLoading(true);
+        try {
+          const loadedFlashcard = await getFlashcard(parseInt(id));
+          if (loadedFlashcard) {
+            setFlashcard(loadedFlashcard);
+          }
+        } catch (err) {
+          setError('Failed to load flashcard');
+          console.error(err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    loadFlashcard();
+  }, [id]);
+  
+  const handleChange = (field: keyof typeof flashcard, value: string) => {
+    setFlashcard(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const handleSave = async () => {
+    // Validate inputs
+    if (!flashcard.front.trim() || !flashcard.back.trim()) {
+      setError('Front and back content are required');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // If it's a new flashcard, generate a new ID
+      if (flashcard.id === 0) {
+        flashcard.id = Date.now(); // Simple ID generation
+      }
+      
+      await saveFlashcard(flashcard);
+      router.back(); // Navigate back after saving
+    } catch (err) {
+      setError('Failed to save flashcard');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleDelete = async () => {
+    if (flashcard.id === 0) {
+      router.back(); // Just go back if it's a new unsaved flashcard
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await deleteFlashcard(flashcard.id);
+      router.back();
+    } catch (err) {
+      setError('Failed to delete flashcard');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  if (isLoading) return <View style={styles.container}><Text>Loading...</Text></View>;
+  
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Topic"
-          value={topic}
-          onChangeText={setTopic}
-        />
-        <TextInput
-          style={[styles.input, styles.descriptionInput]}
-          placeholder="Description"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-        />
-        <Button title="Dodaj fiszkę" onPress={addFlashCard} />
-        <Button title="Wyświetl fiszkę" onPress={getFlashcards} />
-      </ThemedView>
-    </ParallaxScrollView>
+    <ScrollView style={styles.container}>
+      {error && <Text style={styles.error}>{error}</Text>}
+      
+      <Text style={styles.label}>Front (Question)</Text>
+      <TextInput
+        style={styles.input}
+        value={flashcard.front}
+        onChangeText={(text) => handleChange('front', text)}
+        placeholder="Enter question"
+        multiline
+      />
+      
+      <Text style={styles.label}>Front Hint (Optional)</Text>
+      <TextInput
+        style={styles.input}
+        value={flashcard.frontHint || ''}
+        onChangeText={(text) => handleChange('frontHint', text)}
+        placeholder="Enter hint"
+        multiline
+      />
+      
+      <Text style={styles.label}>Back (Answer)</Text>
+      <TextInput
+        style={styles.input}
+        value={flashcard.back}
+        onChangeText={(text) => handleChange('back', text)}
+        placeholder="Enter answer"
+        multiline
+      />
+      
+      <Text style={styles.label}>Additional Info (Optional)</Text>
+      <TextInput
+        style={styles.input}
+        value={flashcard.backInfo || ''}
+        onChangeText={(text) => handleChange('backInfo', text)}
+        placeholder="Enter additional information"
+        multiline
+      />
+      
+      <View style={styles.buttonContainer}>
+        <Button title="Save" onPress={handleSave} disabled={isLoading} />
+        <Button title="Read Cards" onPress={getFlashcards} disabled={isLoading}/>
+        {flashcard.id !== 0 && (
+          <Button 
+            title="Delete" 
+            onPress={handleDelete} 
+            disabled={isLoading}
+            color="red"
+          />
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
   },
-  inputContainer: {
-    padding: 20,
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 12,
+    marginBottom: 4,
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    borderRadius: 5,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    padding: 10,
+    fontSize: 16,
+    minHeight: 80,
   },
-  descriptionInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  titleContainer: {
+  buttonContainer: {
     flexDirection: 'row',
-    gap: 8,
+    justifyContent: 'space-around',
+    marginTop: 24,
+    marginBottom: 40,
   },
+  error: {
+    color: 'red',
+    marginBottom: 12,
+  }
 });
