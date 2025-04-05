@@ -10,8 +10,8 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">Welcome!</ThemedText>
-
+      <ThemedText type="title" style={styles.title}>Fistaszki</ThemedText>
+      <ThemedText style={styles.space}></ThemedText> {/* Some empty space */}
       {/* Learn */}
       <TouchableOpacity
         style={[styles.button, { backgroundColor: '#FACFFF' }]}
@@ -53,6 +53,14 @@ const styles = StyleSheet.create({
   //Basic container
   container: {
     padding: 16,
+  },
+  //Basic container
+  title: {
+    textAlign: 'center',
+  },
+  // Some space from top
+  space: {
+    marginTop: 20,
   },
   //Navigation button
   button: {
