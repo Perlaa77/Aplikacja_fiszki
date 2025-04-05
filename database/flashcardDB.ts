@@ -178,3 +178,117 @@ export const getAllFlashcards = async (): Promise<Flashcard[]> => {
 // ---------- Study Session funtions ----------
 // ---------- Statistics funtions ----------
 // ---------- User funtions ----------
+// Save/Register user
+export const saveUser = async (user: User): Promise<void> => {
+  try {
+      await AsyncStorage.setItem(
+          `${KEYS.USER}${user.id}`,
+          JSON.stringify(user)
+      );
+  } catch (error) {
+      handleError(error, 'saveUser');
+  }
+};
+
+// Get user by ID
+export const getUser = async (id: number): Promise<User | null> => {
+  try {
+      const jsonValue = await AsyncStorage.getItem(`${KEYS.USER}${id}`);
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+  } catch (error) {
+      handleError(error, 'getUser');
+      return null;
+  }
+};
+
+// Get user by email (useful for login)
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+  try {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const userKeys = allKeys.filter(key => key.startsWith(KEYS.USER));
+      
+      for (const key of userKeys) {
+          const userData = await AsyncStorage.getItem(key);
+          if (userData) {
+              const user = JSON.parse(userData);
+              if (user.email === email) {
+                  return user;
+              }
+          }
+      }
+      return null;
+  } catch (error) {
+      handleError(error, 'getUserByEmail');
+      return null;
+  }
+};
+
+// Update user (except password)
+export const updateUser = async (id: number, updates: Partial<User>): Promise<void> => {
+  try {
+      const user = await getUser(id);
+      if (!user) {
+          throw new Error('User not found');
+      }
+      
+      const updatedUser = { ...user, ...updates };
+      await saveUser(updatedUser);
+  } catch (error) {
+      handleError(error, 'updateUser');
+  }
+};
+
+// Change password
+export const changeUserPassword = async (id: number, newPasswordHash: string): Promise<void> => {
+  try {
+      const user = await getUser(id);
+      if (!user) {
+          throw new Error('User not found');
+      }
+      
+      const updatedUser = { ...user, passwordHash: newPasswordHash };
+      await saveUser(updatedUser);
+  } catch (error) {
+      handleError(error, 'changeUserPassword');
+  }
+};
+
+// Delete user
+export const deleteUser = async (id: number): Promise<void> => {
+  try {
+      await AsyncStorage.removeItem(`${KEYS.USER}${id}`);
+  } catch (error) {
+      handleError(error, 'deleteUser');
+  }
+};
+
+// Get all users (for admin purposes)
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const userKeys = allKeys.filter(key => key.startsWith(KEYS.USER));
+      
+      if (userKeys.length === 0) {
+          return [];
+      }
+      
+      const usersData = await AsyncStorage.multiGet(userKeys);
+      return usersData
+          .map(([_, value]) => (value ? JSON.parse(value) : null))
+          .filter(user => user !== null);
+  } catch (error) {
+      handleError(error, 'getAllUsers');
+      return [];
+  }
+};
+
+// Check if email is already registered
+export const isEmailRegistered = async (email: string): Promise<boolean> => {
+  try {
+    const user = await getUserByEmail(email.toLowerCase());
+    return user !== null;
+  } catch (error) {
+    console.error('Error checking email:', error);
+    return false;
+  }
+};

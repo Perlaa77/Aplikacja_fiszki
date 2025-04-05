@@ -6,7 +6,16 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false); // Stan logowania - zmień na true jeśli użytkownik jest zalogowany
+
+  const handleProfilePress = () => {
+    if (isLoggedIn) {
+      router.push('/profile');
+    } else {
+      router.push('/login');
+    }
+  };
 
   return (
     <ParallaxScrollView
@@ -30,7 +39,7 @@ export default function HomeScreen() {
       >
         <View style={styles.buttonContent}>
           <Image
-            source={require('@/assets/images/partial-react-logo.png')} // Replace with the correct icon
+            source={require('@/assets/images/partial-react-logo.png')}
             style={styles.buttonImage}
           />
           <View style={styles.textContainer}>
@@ -47,12 +56,31 @@ export default function HomeScreen() {
       >
         <View style={styles.buttonContent}>
           <Image
-            source={require('@/assets/images/partial-react-logo.png')} // Replace with the correct icon
+            source={require('@/assets/images/partial-react-logo.png')}
             style={styles.buttonImage}
           />
           <View style={styles.textContainer}>
             <Text style={styles.buttonTitle}>Edit</Text>
             <Text style={styles.buttonDescription}>Go to edit</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* Profile Button */}
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: '#FFDBA1' }]}
+        onPress={handleProfilePress}
+      >
+        <View style={styles.buttonContent}>
+          <Image
+            source={require('@/assets/images/partial-react-logo.png')}
+            style={styles.buttonImage}
+          />
+          <View style={styles.textContainer}>
+            <Text style={styles.buttonTitle}>Profile</Text>
+            <Text style={styles.buttonDescription}>
+              {isLoggedIn ? 'Profile settings' : 'Login to your account'}
+            </Text>
           </View>
         </View>
       </TouchableOpacity>
