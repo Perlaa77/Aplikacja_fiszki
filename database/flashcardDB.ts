@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-//Database
+// ---------- Database ----------
 interface Flashcard {
     id: number;
     topicId: number;
@@ -63,7 +63,7 @@ interface Flashcard {
     passwordHash: string;
   }
 
-//Keys
+// ---------- Keys ----------
 const KEYS = {
     FLASHCARD: 'flashcard_',
     TOPIC: 'topic_',
@@ -73,5 +73,78 @@ const KEYS = {
     USER: 'user_'  
 }
 
+// ---------- Handle errors ----------
+const handleError = (error: any, operation: string) => {
+    console.error(`Error during ${operation}:`, error);
+    throw error;
+};
 
-//Operations on flashcards
+// ---------- Flashcard funtions ----------
+//Save
+export const saveFlashcard = async (flashcard: Flashcard): Promise<void> => {
+    try {
+        await AsyncStorage.setItem(
+            `${KEYS.FLASHCARD}${flashcard.id}`,
+            JSON.stringify(flashcard)
+        );
+    } catch (error) {
+        handleError(error, 'saveFlashcard');
+    }
+};
+
+//Get
+export const getFlashcard = async (id: number): Promise<Flashcard | null> => {
+    try {
+        const jsonValue = await AsyncStorage.getItem(`${KEYS.FLASHCARD}${id}`);
+        return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (error) {
+        handleError(error, 'getFlashcard');
+        return null;
+    }
+};
+
+//Delete
+export const deleteFlashcard = async (id: number): Promise<void> => {
+    try {
+        await AsyncStorage.removeItem(`${KEYS.FLASHCARD}${id}`);
+    } catch (error) {
+        handleError(error, 'deleteFlashcard');
+    }
+};
+
+// ---------- Topic funtions ----------
+//Save
+export const saveTopic = async (topic: Topic): Promise<void> => {
+    try {
+        await AsyncStorage.setItem(
+            `${KEYS.TOPIC}${topic.id}`,
+            JSON.stringify(topic)
+        );
+    } catch (error) {
+        handleError(error, 'saveTopic');
+    }
+};
+
+//Get
+export const getTopic = async (id: number): Promise<Topic | null> => {
+    try {
+        const jsonValue = await AsyncStorage.getItem(`${KEYS.TOPIC}${id}`);
+        return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (error) {
+        handleError(error, 'getTopic');
+        return null;
+    }
+};
+
+//Delete
+export const deleteTopic = async (id: number): Promise<void> => {
+    try {
+        await AsyncStorage.removeItem(`${KEYS.TOPIC}${id}`);
+    } catch (error) {
+        handleError(error, 'deleteTopic');
+    }
+};
+
+// ---------- Study Session funtions ----------
+// ---------- Statistics funtions ----------
+// ---------- User funtions ----------
