@@ -1,10 +1,25 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 import { getUser, updateUser, changeUserPassword, deleteUser } from '@/database/flashcardDB';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useFocusEffect } from 'expo-router';
+import React from 'react';
+
+// W komponencie ProfileScreen dodaj:
+useFocusEffect(
+  React.useCallback(() => {
+    const checkAuth = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        router.replace('/login');
+      }
+    };
+    checkAuth();
+  }, [])
+);
 
 export default function ProfileScreen() {
     const [user, setUser] = useState<any>(null);
@@ -16,12 +31,13 @@ export default function ProfileScreen() {
       confirmPassword: ''
     });
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
   
     useEffect(() => {
       const loadUserData = async () => {
         try {
-          const userId = await AsyncStorage.getItem('userId');
+          const userId = await AsyncStorage.getItem('currentUserId');
           if (userId) {
             const userData = await getUser(parseInt(userId));
             if (userData) {
@@ -59,25 +75,55 @@ export default function ProfileScreen() {
     };
   
     const handleChangePassword = async () => {
-      if (formData.newPassword !== formData.confirmPassword) {
-        Alert.alert('Error', "Passwords don't match");
+      if (!user) return;
+      
+      if (!formData.currentPassword) {
+        Alert.alert('Error', 'Please enter your current password');
         return;
       }
+      
+      if (formData.newPassword !== formData.confirmPassword) {
+        Alert.alert('Error', "New passwords don't match");
+        return;
+      }
+      
+      if (formData.currentPassword === formData.newPassword) {
+        Alert.alert('Error', "New password must be different from current password");
+        return;
+      }
+
+      setIsLoading(true);
   
       try {
+        // Sprawdzenie obecnego hasła
+        if (user.passwordHash !== formData.currentPassword) {
+          Alert.alert('Error', 'Current password is incorrect');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Aktualizacja hasła
         await changeUserPassword(user.id, formData.newPassword);
         Alert.alert('Success', 'Password changed successfully');
-        setFormData({...formData, newPassword: '', confirmPassword: ''});
+        setFormData({
+          ...formData,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
       } catch (error) {
+        console.error('Error changing password:', error);
         Alert.alert('Error', 'Failed to change password');
+      } finally {
+        setIsLoading(false);
       }
     };
   
     const handleLogout = async () => {
-      await AsyncStorage.removeItem('userToken');
-      await AsyncStorage.removeItem('userId');
-      router.replace('/');
-    };
+        await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('userId');
+        router.replace('/login');
+      };
   
     if (!user) {
       return (
@@ -130,15 +176,30 @@ export default function ProfileScreen() {
   
           {isEditing ? (
             <View style={styles.buttonGroup}>
-              <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleUpdateProfile}>
-                <ThemedText style={styles.buttonText}>Save</ThemedText>
+              <TouchableOpacity 
+                style={[styles.button, styles.saveButton]} 
+                onPress={handleUpdateProfile}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <ThemedText style={styles.buttonText}>Save</ThemedText>
+                )}
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setIsEditing(false)}>
+              <TouchableOpacity 
+                style={[styles.button, styles.cancelButton]} 
+                onPress={() => setIsEditing(false)}
+                disabled={isLoading}
+              >
                 <ThemedText style={styles.buttonText}>Cancel</ThemedText>
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={[styles.button, styles.editButton]} onPress={() => setIsEditing(true)}>
+            <TouchableOpacity 
+              style={[styles.button, styles.editButton]} 
+              onPress={() => setIsEditing(true)}
+            >
               <ThemedText style={styles.buttonText}>Edit</ThemedText>
             </TouchableOpacity>
           )}
@@ -177,13 +238,24 @@ export default function ProfileScreen() {
             autoCapitalize="none"
           />
           
-          <TouchableOpacity style={[styles.button, styles.changePasswordButton]} onPress={handleChangePassword}>
-            <ThemedText style={styles.buttonText}>Change Password</ThemedText>
+          <TouchableOpacity 
+            style={[styles.button, styles.changePasswordButton]} 
+            onPress={handleChangePassword}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <ThemedText style={styles.buttonText}>Change Password</ThemedText>
+            )}
           </TouchableOpacity>
         </ThemedView>
   
         <View style={styles.footer}>
-          <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
+          <TouchableOpacity 
+            style={[styles.button, styles.logoutButton]} 
+            onPress={handleLogout}
+          >
             <ThemedText style={styles.buttonText}>Logout</ThemedText>
           </TouchableOpacity>
         </View>
@@ -194,7 +266,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#121212', // Ciemne tło
+      backgroundColor: '#121212',
     },
     scrollContainer: {
       padding: 20,
@@ -204,23 +276,23 @@ const styles = StyleSheet.create({
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: '#121212', // Ciemne tło
+      backgroundColor: '#121212',
     },
     title: {
       textAlign: 'center',
       marginBottom: 20,
       fontSize: 24,
       fontWeight: 'bold',
-      color: '#FFB6C1', // Biały tekst
+      color: '#FFB6C1',
     },
     lightText: {
-      color: '#fff', // Biały tekst dla zawartości
+      color: '#fff',
     },
     section: {
       marginBottom: 20,
       padding: 20,
       borderRadius: 10,
-      backgroundColor: '#1E1E1E', // Ciemniejszy odcień dla sekcji
+      backgroundColor: '#1E1E1E',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
@@ -231,7 +303,7 @@ const styles = StyleSheet.create({
       fontSize: 18,
       fontWeight: '600',
       marginBottom: 15,
-      color: '#fff', // Biały tekst
+      color: '#fff',
     },
     inputGroup: {
       marginBottom: 15,
@@ -239,26 +311,26 @@ const styles = StyleSheet.create({
     label: {
       fontSize: 14,
       marginBottom: 5,
-      color: '#aaa', // Jasnoszary tekst dla etykiet
+      color: '#aaa',
     },
     input: {
       height: 50,
       borderWidth: 1,
-      borderColor: '#333', // Ciemniejsza ramka
+      borderColor: '#333',
       borderRadius: 10,
       padding: 15,
       marginBottom: 15,
-      backgroundColor: '#2A2A2A', // Ciemne tło dla inputów
-      color: '#fff', // Biały tekst w inputach
+      backgroundColor: '#2A2A2A',
+      color: '#fff',
     },
     value: {
       fontSize: 16,
       padding: 15,
-      backgroundColor: '#2A2A2A', // Ciemne tło dla wartości
+      backgroundColor: '#2A2A2A',
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: '#333', // Ciemniejsza ramka
-      color: '#fff', // Biały tekst
+      borderColor: '#333',
+      color: '#fff',
     },
     buttonGroup: {
       flexDirection: 'row',
@@ -278,21 +350,21 @@ const styles = StyleSheet.create({
       color: '#fff',
     },
     editButton: {
-      backgroundColor: '#FFB6C1', // Jasny róż/czerwony
+      backgroundColor: '#FFB6C1',
     },
     saveButton: {
-      backgroundColor: '#FFCCE5', // Jasny róż/czerwony
+      backgroundColor: '#FFCCE5',
       flex: 1,
     },
     cancelButton: {
-      backgroundColor: '#FF8E8E', // Jaśniejszy róż/czerwony dla cancel
+      backgroundColor: '#FF8E8E',
       flex: 1,
     },
     changePasswordButton: {
-      backgroundColor: '#FFB6C1', // Jasny róż/czerwony
+      backgroundColor: '#FFB6C1',
     },
     logoutButton: {
-      backgroundColor: '#FFB6C1', // Jasny róż/czerwony
+      backgroundColor: '#FFB6C1',
     },
     footer: {
       marginTop: 20,

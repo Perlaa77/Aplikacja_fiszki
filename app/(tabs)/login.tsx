@@ -38,8 +38,10 @@ export default function LoginScreen() {
             return;
           }
           
-          // Zapisujemy prostą informację o zalogowaniu
-          await AsyncStorage.setItem('currentUserId', user.id.toString());
+          // DODANE: Zapisujemy token logowania
+          await AsyncStorage.setItem('userToken', 'dummy-auth-token');
+          // DODANE: Zapisujemy ID użytkownika
+          await AsyncStorage.setItem('userId', user.id.toString());
           
           // Przekierowanie po udanym logowaniu
           router.replace('/');

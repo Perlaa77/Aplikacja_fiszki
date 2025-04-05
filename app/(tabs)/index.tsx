@@ -4,18 +4,50 @@ import { useRouter } from 'expo-router';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false); // Stan logowania - zmień na true jeśli użytkownik jest zalogowany
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
-  const handleProfilePress = () => {
-    if (isLoggedIn) {
-      router.push('/profile');
-    } else {
-      router.push('/login');
-    }
-  };
+  // Sprawdź stan logowania przy starcie komponentu
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        setIsLoggedIn(!!token);
+      } catch (error) {
+        console.error('Error checking login status:', error);
+      }
+    };
+
+    checkLoginStatus();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const checkLoginStatus = async () => {
+        try {
+          const token = await AsyncStorage.getItem('userToken');
+          setIsLoggedIn(!!token);
+        } catch (error) {
+          console.error('Error checking login status:', error);
+        }
+      };
+      checkLoginStatus();
+    }, [])
+  );
+
+  const handleProfilePress = async () => {
+  const token = await AsyncStorage.getItem('userToken');
+  if (token) {
+    router.push('/profile');
+  } else {
+    router.push('/login');
+  }
+};
 
   return (
     <ParallaxScrollView
@@ -26,10 +58,7 @@ export default function HomeScreen() {
         />
       }
     >
-      {/* Title */}
       <ThemedText type="title" style={styles.title}>Fistaszki</ThemedText>
-
-      {/* Space between title and buttons */}
       <ThemedView style={styles.space} />
 
       {/* Learn Button */}
@@ -88,23 +117,18 @@ export default function HomeScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
-  // Basic container
   container: {
     padding: 16,
   },
-  // Title text style, centered
   title: {
     textAlign: 'center',
     fontSize: 24,
     fontWeight: 'bold',
   },
-  // Space between title and buttons
   space: {
     marginTop: 20,
   },
-  // Button style
   button: {
     flexDirection: 'row',
     alignItems: 'center',
