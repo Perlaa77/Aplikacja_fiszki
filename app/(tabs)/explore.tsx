@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { getAllFlashcards } from '../../database/flashcardDB';
+import { getTopic } from '../../database/flashcardDB';
 
 export default function TabTwoScreen() {
   const [flashcards, setFlashcards] = useState<Array<{
@@ -19,6 +20,7 @@ export default function TabTwoScreen() {
     backInfo?: string;
   }>>([]);
   
+  const [currentTopic, setCurrentTopic] = useState<string>('No topic');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,11 @@ export default function TabTwoScreen() {
         const cards = await getAllFlashcards();
         if (cards && Array.isArray(cards)) {
           setFlashcards(cards);
+          // Pobierz temat dla pierwszej fiszki
+          if (cards.length > 0) {
+            const topic = await getTopic(cards[0].topicId);
+            setCurrentTopic(topic?.name || 'No topic');
+          }
         } else {
           setFlashcards([]);
         }
@@ -84,45 +91,40 @@ export default function TabTwoScreen() {
     const currentCard = flashcards[currentIndex];
     
     return (
-      <TouchableOpacity activeOpacity={0.8} onPress={toggleAnswer} style={styles.cardContainer}>
-        <ThemedView style={styles.card}>
-          <ThemedText style={styles.cardCounter}>
-            {currentIndex + 1} / {flashcards.length}
-          </ThemedText>
-          
-          {!showAnswer ? (
-            <>
-              <ThemedText style={styles.cardQuestion}>{currentCard.front}</ThemedText>
-              {currentCard.frontHint && (
-                <ThemedText style={styles.cardHint}>Hint: {currentCard.frontHint}</ThemedText>
-              )}
-              <ThemedText style={styles.tapPrompt}>Tap to see answer</ThemedText>
-            </>
-          ) : (
-            <>
-              <ThemedText style={styles.cardAnswer}>{currentCard.back}</ThemedText>
-              {currentCard.backInfo && (
-                <ThemedText style={styles.cardInfo}>{currentCard.backInfo}</ThemedText>
-              )}
-              <ThemedText style={styles.tapPrompt}>Tap to see question</ThemedText>
-            </>
-          )}
-        </ThemedView>
-      </TouchableOpacity>
+      <ThemedView style={styles.flashcardWrapper}>
+        <ThemedText style={styles.topicText}>{currentTopic}</ThemedText>
+        <TouchableOpacity activeOpacity={0.8} onPress={toggleAnswer} style={styles.cardContainer}>
+          <ThemedView style={styles.card}>
+            <ThemedText style={styles.cardCounter}>
+              {currentIndex + 1} / {flashcards.length}
+            </ThemedText>
+            
+            {!showAnswer ? (
+              <>
+                <ThemedText style={styles.cardQuestion}>{currentCard.front}</ThemedText>
+                {currentCard.frontHint && (
+                  <ThemedText style={styles.cardHint}>Hint: {currentCard.frontHint}</ThemedText>
+                )}
+                <ThemedText style={styles.tapPrompt}>Tap to see answer</ThemedText>
+              </>
+            ) : (
+              <>
+                <ThemedText style={styles.cardAnswer}>{currentCard.back}</ThemedText>
+                {currentCard.backInfo && (
+                  <ThemedText style={styles.cardInfo}>{currentCard.backInfo}</ThemedText>
+                )}
+                <ThemedText style={styles.tapPrompt}>Tap to see question</ThemedText>
+              </>
+            )}
+          </ThemedView>
+        </TouchableOpacity>
+      </ThemedView>
     );
   };
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
+      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }} headerImage={<></>}   >
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Learn from your flashcards!</ThemedText>
       </ThemedView>
@@ -156,11 +158,15 @@ export default function TabTwoScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  flashcardWrapper: {
+    marginBottom: 20,
+  },
+  topicText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+    color: '#555',
   },
   titleContainer: {
     flexDirection: 'row',
