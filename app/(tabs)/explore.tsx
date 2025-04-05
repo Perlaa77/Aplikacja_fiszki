@@ -3,14 +3,18 @@ import { StyleSheet, Image, Platform, TouchableOpacity, ActivityIndicator } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Collapsible } from '@/components/Collapsible';
 import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { ScrollView } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { getAllFlashcards } from '../../database/flashcardDB';
 import { getTopic } from '../../database/flashcardDB';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabTwoScreen() {
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === 'dark';
+  
   const [flashcards, setFlashcards] = useState<Array<{
     id: number;
     topicId: number;
@@ -123,143 +127,201 @@ export default function TabTwoScreen() {
   };
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }} headerImage={<></>}   >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Learn from your flashcards!</ThemedText>
+    <ScrollView 
+      contentContainerStyle={[
+        styles.scrollContainer,
+        { backgroundColor: isDarkMode ? '#121212' : '#f5f7fa' }
+      ]}
+    >
+      <ThemedView style={styles.headerContainer}>
+        <ThemedText type="title" style={styles.headerTitle}>
+          Flashcard Master
+        </ThemedText>
+        <ThemedText style={styles.headerSubtitle}>
+          {flashcards.length > 0 
+            ? `You have ${flashcards.length} cards to review` 
+            : 'No flashcards available'}
+        </ThemedText>
       </ThemedView>
-      <ThemedText style={styles.instructions}>
-        You can tap on your flashcard to see the answer.
-      </ThemedText>
 
       {renderFlashcard()}
 
-      <ThemedView style={styles.navigationButtonsContainer}>
+      <ThemedView style={styles.navigationContainer}>
         <TouchableOpacity 
           onPress={handlePrevCard} 
           disabled={currentIndex === 0 || flashcards.length === 0}
-          style={[styles.navButton, (currentIndex === 0 || flashcards.length === 0) && styles.disabledButton]}
+          style={[
+            styles.navButton,
+            styles.navButtonPrev,
+            (currentIndex === 0 || flashcards.length === 0) && styles.disabledButton
+          ]}
         >
-          <IconSymbol size={24} name="chevron.backward" color={currentIndex === 0 || flashcards.length === 0 ? "#AAAAAA" : "#808080"} />
-          <ThemedText style={[(currentIndex === 0 || flashcards.length === 0) && styles.disabledText]}>Previous</ThemedText>
+          <IconSymbol 
+            size={20} 
+            name="chevron.backward" 
+            color={isDarkMode ? '#fff' : '#4a6da7'} 
+          />
+          <ThemedText style={styles.navButtonText}>Previous</ThemedText>
         </TouchableOpacity>
         
         <TouchableOpacity 
           onPress={handleNextCard} 
           disabled={currentIndex === flashcards.length - 1 || flashcards.length === 0}
-          style={[styles.navButton, (currentIndex === flashcards.length - 1 || flashcards.length === 0) && styles.disabledButton]}
+          style={[
+            styles.navButton,
+            styles.navButtonNext,
+            (currentIndex === flashcards.length - 1 || flashcards.length === 0) && styles.disabledButton
+          ]}
         >
-          <ThemedText style={[(currentIndex === flashcards.length - 1 || flashcards.length === 0) && styles.disabledText]}>Next</ThemedText>
-          <IconSymbol size={24} name="chevron.forward" color={currentIndex === flashcards.length - 1 || flashcards.length === 0 ? "#AAAAAA" : "#808080"} />
+          <ThemedText style={styles.navButtonText}>Next</ThemedText>
+          <IconSymbol 
+            size={20} 
+            name="chevron.forward" 
+            color={isDarkMode ? '#fff' : '#4a6da7'} 
+          />
         </TouchableOpacity>
       </ThemedView>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  headerContainer: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 8,
+    color: '#4a6da7',
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
   flashcardWrapper: {
-    marginBottom: 20,
+    marginBottom: 32,
   },
   topicText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 10,
-    color: '#555',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  instructions: {
-    marginBottom: 24,
+    marginBottom: 16,
+    color: '#4a6da7',
   },
   cardContainer: {
-    marginHorizontal: 16,
+    marginHorizontal: 8,
     marginVertical: 8,
-  },
-  card: {
-    padding: 20,
-    borderRadius: 12,
-    minHeight: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: 3,
+  },
+  card: {
+    padding: 28,
+    borderRadius: 16,
+    minHeight: 240,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   cardCounter: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    fontSize: 12,
-    opacity: 0.6,
+    top: 16,
+    right: 16,
+    fontSize: 14,
+    color: '#888',
+    fontWeight: '500',
   },
   cardQuestion: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+    color: '#333',
+    lineHeight: 28,
   },
   cardAnswer: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+    color: '#4a6da7',
+    lineHeight: 28,
   },
   cardHint: {
     fontStyle: 'italic',
-    marginBottom: 12,
+    marginBottom: 16,
+    color: '#666',
+    textAlign: 'center',
   },
   cardInfo: {
-    marginTop: 8,
-    padding: 10,
+    marginTop: 16,
+    padding: 12,
     borderRadius: 8,
-    backgroundColor: 'rgba(128, 128, 128, 0.1)',
+    backgroundColor: 'rgba(74, 109, 167, 0.1)',
     width: '100%',
   },
   tapPrompt: {
-    marginTop: 16,
-    fontSize: 12,
-    opacity: 0.6,
+    marginTop: 20,
+    fontSize: 14,
+    color: '#888',
+    fontStyle: 'italic',
   },
   loadingContainer: {
-    height: 200,
+    height: 240,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+  },
+  emptyContainer: {
+    height: 240,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
-  },
-  emptyContainer: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    padding: 16,
+    padding: 24,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginHorizontal: 8,
   },
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    marginTop: 8,
+    color: '#666',
   },
-  navigationButtonsContainer: {
+  navigationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 16,
-    marginTop: 8,
+    marginTop: 24,
   },
   navButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
-    gap: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: '#4a6da7',
+  },
+  navButtonPrev: {
+    paddingRight: 16,
+  },
+  navButtonNext: {
+    paddingLeft: 16,
+  },
+  navButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+    marginHorizontal: 8,
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
-  disabledText: {
-    opacity: 0.5,
-  }
 });
