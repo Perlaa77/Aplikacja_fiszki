@@ -145,6 +145,36 @@ export const deleteTopic = async (id: number): Promise<void> => {
     }
 };
 
+// Add this function to your flashcardDB.ts file
+
+export const getAllFlashcards = async (): Promise<Flashcard[]> => {
+    try {
+      // Get all keys in AsyncStorage
+      const allKeys = await AsyncStorage.getAllKeys();
+  
+      // Filter keys to only include flashcard keys
+      const flashcardKeys = allKeys.filter(key => key.startsWith(KEYS.FLASHCARD));
+  
+      // If no flashcards found, return empty array
+      if (flashcardKeys.length === 0) {
+        return [];
+      }
+  
+      // Get all flashcards data
+      const flashcardsData = await AsyncStorage.multiGet(flashcardKeys);
+  
+      // Parse JSON and convert to Flashcard objects
+      const flashcards: Flashcard[] = flashcardsData
+        .map(([_, value]) => (value ? JSON.parse(value) : null))
+        .filter(item => item !== null);
+  
+      return flashcards;
+    } catch (error) {
+      handleError(error, 'getAllFlashcards');
+      return [];
+    }
+  };
+
 // ---------- Study Session funtions ----------
 // ---------- Statistics funtions ----------
 // ---------- User funtions ----------
