@@ -1,58 +1,53 @@
 import React from 'react';
 import { Image, StyleSheet, Platform, View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-
+import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
-  const router = useRouter(); // Inicjalizacja routera
+  const router = useRouter(); // Initialize router
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">Welcome!</ThemedText>
-      
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
+    <ParallaxScrollView
+      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+      headerImage={
+        <Image
+          source={require('@/assets/images/partial-react-logo.png')}
+        />
+      }
+    >
+      {/* Title */}
+      <ThemedText type="title" style={styles.title}>Fistaszki</ThemedText>
 
-      {/* Przycisk Explore */}
+      {/* Space between title and buttons */}
+      <ThemedView style={styles.space} />
+
+      {/* Learn Button */}
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, { backgroundColor: '#FACFFF' }]}
         onPress={() => router.push('/explore')}
       >
         <View style={styles.buttonContent}>
           <Image
-            source={require('@/assets/images/partial-react-logo.png')} // Zmieniamy na odpowiednią ikonę
+            source={require('@/assets/images/partial-react-logo.png')} // Replace with the correct icon
             style={styles.buttonImage}
           />
           <View style={styles.textContainer}>
-            <Text style={styles.buttonTitle}>Explore</Text>
-            <Text style={styles.buttonDescription}>Go to explore</Text>
+            <Text style={styles.buttonTitle}>Learn</Text>
+            <Text style={styles.buttonDescription}>Go learn!</Text>
           </View>
         </View>
       </TouchableOpacity>
 
-      {/* Przycisk Edit */}
+      {/* Edit Button */}
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, { backgroundColor: '#BACDFF' }]}
         onPress={() => router.push('/editFlashcards')}
       >
         <View style={styles.buttonContent}>
           <Image
-            source={require('@/assets/images/partial-react-logo.png')} // Zmieniamy na odpowiednią ikonę
+            source={require('@/assets/images/partial-react-logo.png')} // Replace with the correct icon
             style={styles.buttonImage}
           />
           <View style={styles.textContainer}>
@@ -61,27 +56,34 @@ export default function HomeScreen() {
           </View>
         </View>
       </TouchableOpacity>
-    </ThemedView>
+    </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  // Basic container
   container: {
     padding: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  // Title text style, centered
+  title: {
+    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
+  // Space between title and buttons
+  space: {
+    marginTop: 20,
+  },
+  // Button style
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#A1CEDC', // Kolor tła przycisku
-    borderRadius: 15, // Zaokrąglone rogi
-    paddingHorizontal: 16, // Odstępy od brzegów
-    paddingVertical: 12, // Wysokość przycisku
-    marginBottom: 16, // Odstęp między przyciskami
-    width: '100%', // Pełna szerokość
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 18,
+    width: '100%',
   },
   buttonContent: {
     flexDirection: 'row',
@@ -89,9 +91,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   buttonImage: {
-    width: 50, // Szerokość obrazu
-    height: 50, // Wysokość obrazu
-    marginRight: 16, // Odstęp między obrazem a tekstem
+    width: 50,
+    height: 50,
+    marginRight: 16,
   },
   textContainer: {
     flex: 1,
@@ -99,10 +101,10 @@ const styles = StyleSheet.create({
   buttonTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff', // Kolor tekstu
+    color: '#000000',
   },
   buttonDescription: {
     fontSize: 14,
-    color: '#ffffff', // Kolor tekstu
+    color: '#111111',
   },
 });
