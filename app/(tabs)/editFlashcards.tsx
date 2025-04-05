@@ -1,28 +1,38 @@
-// editFlashcard.tsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { saveFlashcard, getFlashcard, deleteFlashcard } from '../../database/flashcardDB';
 import { getAllFlashcards } from '../../database/flashcardDB';
 
+interface Flashcard {
+  id: number;
+  topicId: number;
+  front: string;
+  frontHint?: string;
+  back: string;
+  backInfo?: string;
+}
+
 export default function EditFlashcardScreen() {
   const router = useRouter();
   const { id, topicId } = useLocalSearchParams<{ id: string; topicId: string }>();
   
-  const [flashcard, setFlashcard] = useState({
-    id: parseInt(id || '0'),
-    topicId: parseInt(topicId || '0'),
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const [flashcard, setFlashcard] = useState<Flashcard>({
+    id: 0,
+    topicId: topicId ? parseInt(topicId) : 0,
     front: '',
     frontHint: '',
     back: '',
     backInfo: ''
   });
-  
-const getFlashcards = async () => {
+
+  const getFlashcards = async () => {
     try {
-      const flashcards = await getAllFlashcards();
+      const loadedFlashcards = await getAllFlashcards();
+      setFlashcards(loadedFlashcards);
       console.log(flashcards);
-      return flashcards;
+      return loadedFlashcards;
     } catch (e) {
       console.error('Error loading cards:', e);
       return [];
@@ -40,7 +50,11 @@ const getFlashcards = async () => {
         try {
           const loadedFlashcard = await getFlashcard(parseInt(id));
           if (loadedFlashcard) {
-            setFlashcard(loadedFlashcard);
+            setFlashcard({
+              ...loadedFlashcard,
+              frontHint: loadedFlashcard.frontHint || '',
+              backInfo: loadedFlashcard.backInfo || ''
+            });
           }
         } catch (err) {
           setError('Failed to load flashcard');
@@ -53,26 +67,24 @@ const getFlashcards = async () => {
     
     loadFlashcard();
   }, [id]);
-  
-  const handleChange = (field: keyof typeof flashcard, value: string) => {
-    setFlashcard(prev => ({ ...prev, [field]: value }));
+
+  const handleChange = (field: keyof Flashcard, value: string) => {
+    setFlashcard(prev => ({ 
+      ...prev, 
+      [field]: value 
+    }));
   };
-  
+
   const handleSave = async () => {
-    // Validate inputs
-    if (!flashcard.front.trim() || !flashcard.back.trim()) {
-      setError('Front and back content are required');
-      return;
-    }
-    
     setIsLoading(true);
     try {
       // If it's a new flashcard, generate a new ID
-      if (flashcard.id === 0) {
-        flashcard.id = Date.now(); // Simple ID generation
-      }
+      const flashcardToSave = {
+        ...flashcard,
+        id: flashcard.id === 0 ? Date.now() : flashcard.id
+      };
       
-      await saveFlashcard(flashcard);
+      await saveFlashcard(flashcardToSave);
       router.back(); // Navigate back after saving
     } catch (err) {
       setError('Failed to save flashcard');
