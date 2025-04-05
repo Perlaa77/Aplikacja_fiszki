@@ -1,27 +1,16 @@
-import { Image, StyleSheet, Platform, Button } from 'react-native';
-import { useRouter } from 'expo-router'; // Import the useRouter hook for navigation
+import React from 'react';
+import { Image, StyleSheet, Platform, View, Text, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
-  const router = useRouter(); // Initialize the router
+  const router = useRouter(); // Inicjalizacja routera
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
+    <ThemedView style={styles.container}>
+      <ThemedText type="title">Welcome!</ThemedText>
       
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
@@ -38,54 +27,82 @@ export default function HomeScreen() {
           to open developer tools.
         </ThemedText>
       </ThemedView>
-      
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
 
-      {/* Add buttons for navigation */}
-      <ThemedView style={styles.buttonContainer}>
-        <Button title="Explore" onPress={() => router.push('/explore')} />
-        <Button title="Edit" onPress={() => router.push('/editFlashcards')} />
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* Przycisk Explore */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.push('/explore')}
+      >
+        <View style={styles.buttonContent}>
+          <Image
+            source={require('@/assets/images/partial-react-logo.png')} // Zmieniamy na odpowiednią ikonę
+            style={styles.buttonImage}
+          />
+          <View style={styles.textContainer}>
+            <Text style={styles.buttonTitle}>Explore</Text>
+            <Text style={styles.buttonDescription}>Go to explore</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* Przycisk Edit */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.push('/editFlashcards')}
+      >
+        <View style={styles.buttonContent}>
+          <Image
+            source={require('@/assets/images/partial-react-logo.png')} // Zmieniamy na odpowiednią ikonę
+            style={styles.buttonImage}
+          />
+          <View style={styles.textContainer}>
+            <Text style={styles.buttonTitle}>Edit</Text>
+            <Text style={styles.buttonDescription}>Go to edit</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    padding: 16,
   },
   stepContainer: {
     gap: 8,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-  buttonContainer: {
-    marginTop: 20,
-    gap: 12,
+  button: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#A1CEDC', // Kolor tła przycisku
+    borderRadius: 15, // Zaokrąglone rogi
+    paddingHorizontal: 16, // Odstępy od brzegów
+    paddingVertical: 12, // Wysokość przycisku
+    marginBottom: 16, // Odstęp między przyciskami
+    width: '100%', // Pełna szerokość
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  buttonImage: {
+    width: 50, // Szerokość obrazu
+    height: 50, // Wysokość obrazu
+    marginRight: 16, // Odstęp między obrazem a tekstem
+  },
+  textContainer: {
+    flex: 1,
+  },
+  buttonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff', // Kolor tekstu
+  },
+  buttonDescription: {
+    fontSize: 14,
+    color: '#ffffff', // Kolor tekstu
   },
 });
