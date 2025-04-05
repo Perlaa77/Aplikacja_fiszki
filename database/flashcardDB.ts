@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ---------- Database ----------
-interface Flashcard {
+export interface Flashcard {
     id: number;
     topicId: number;
     front: string;
