@@ -1,13 +1,117 @@
-import { StyleSheet, Image, Platform } from 'react-native';
-
+import { useState, useEffect } from 'react';
+import { StyleSheet, Image, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Collapsible } from '@/components/Collapsible';
 import { ExternalLink } from '@/components/ExternalLink';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { getAllFlashcards } from '../../database/flashcardDB';
 
 export default function TabTwoScreen() {
+  const [flashcards, setFlashcards] = useState<Array<{
+    id: number;
+    topicId: number;
+    front: string;
+    frontHint?: string;
+    back: string;
+    backInfo?: string;
+  }>>([]);
+  
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFlashcards = async () => {
+      try {
+        const cards = await getAllFlashcards();
+        if (cards && Array.isArray(cards)) {
+          setFlashcards(cards);
+        } else {
+          setFlashcards([]);
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to load flashcards:", error);
+        setFlashcards([]);
+        setLoading(false);
+      }
+    };
+
+    loadFlashcards();
+  }, []);
+
+  const handleNextCard = () => {
+    if (currentIndex < flashcards.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setShowAnswer(false);
+    }
+  };
+
+  const handlePrevCard = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setShowAnswer(false);
+    }
+  };
+
+  const toggleAnswer = () => {
+    setShowAnswer(!showAnswer);
+  };
+
+  const renderFlashcard = () => {
+    if (loading) {
+      return (
+        <ThemedView style={styles.loadingContainer}>
+          <ActivityIndicator size="large" />
+          <ThemedText>Loading flashcards...</ThemedText>
+        </ThemedView>
+      );
+    }
+
+    if (flashcards.length === 0) {
+      return (
+        <ThemedView style={styles.emptyContainer}>
+          <IconSymbol size={50} name="exclamationmark.triangle" color="#808080" />
+          <ThemedText style={styles.emptyText}>No flashcards found</ThemedText>
+          <ThemedText>Create some flashcards to start learning</ThemedText>
+        </ThemedView>
+      );
+    }
+
+    const currentCard = flashcards[currentIndex];
+    
+    return (
+      <TouchableOpacity activeOpacity={0.8} onPress={toggleAnswer} style={styles.cardContainer}>
+        <ThemedView style={styles.card}>
+          <ThemedText style={styles.cardCounter}>
+            {currentIndex + 1} / {flashcards.length}
+          </ThemedText>
+          
+          {!showAnswer ? (
+            <>
+              <ThemedText style={styles.cardQuestion}>{currentCard.front}</ThemedText>
+              {currentCard.frontHint && (
+                <ThemedText style={styles.cardHint}>Hint: {currentCard.frontHint}</ThemedText>
+              )}
+              <ThemedText style={styles.tapPrompt}>Tap to see answer</ThemedText>
+            </>
+          ) : (
+            <>
+              <ThemedText style={styles.cardAnswer}>{currentCard.back}</ThemedText>
+              {currentCard.backInfo && (
+                <ThemedText style={styles.cardInfo}>{currentCard.backInfo}</ThemedText>
+              )}
+              <ThemedText style={styles.tapPrompt}>Tap to see question</ThemedText>
+            </>
+          )}
+        </ThemedView>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
@@ -20,77 +124,33 @@ export default function TabTwoScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
+        <ThemedText type="title">Learn from your flashcards!</ThemedText>
       </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
+      <ThemedText style={styles.instructions}>
+        You can tap on your flashcard to see the answer.
+      </ThemedText>
+
+      {renderFlashcard()}
+
+      <ThemedView style={styles.navigationButtonsContainer}>
+        <TouchableOpacity 
+          onPress={handlePrevCard} 
+          disabled={currentIndex === 0 || flashcards.length === 0}
+          style={[styles.navButton, (currentIndex === 0 || flashcards.length === 0) && styles.disabledButton]}
+        >
+          <IconSymbol size={24} name="chevron.backward" color={currentIndex === 0 || flashcards.length === 0 ? "#AAAAAA" : "#808080"} />
+          <ThemedText style={[(currentIndex === 0 || flashcards.length === 0) && styles.disabledText]}>Previous</ThemedText>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          onPress={handleNextCard} 
+          disabled={currentIndex === flashcards.length - 1 || flashcards.length === 0}
+          style={[styles.navButton, (currentIndex === flashcards.length - 1 || flashcards.length === 0) && styles.disabledButton]}
+        >
+          <ThemedText style={[(currentIndex === flashcards.length - 1 || flashcards.length === 0) && styles.disabledText]}>Next</ThemedText>
+          <IconSymbol size={24} name="chevron.forward" color={currentIndex === flashcards.length - 1 || flashcards.length === 0 ? "#AAAAAA" : "#808080"} />
+        </TouchableOpacity>
+      </ThemedView>
     </ParallaxScrollView>
   );
 }
@@ -105,5 +165,95 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     gap: 8,
+    marginBottom: 8,
   },
+  instructions: {
+    marginBottom: 24,
+  },
+  cardContainer: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+  },
+  card: {
+    padding: 20,
+    borderRadius: 12,
+    minHeight: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  cardCounter: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  cardQuestion: {
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  cardAnswer: {
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  cardHint: {
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  cardInfo: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(128, 128, 128, 0.1)',
+    width: '100%',
+  },
+  tapPrompt: {
+    marginTop: 16,
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  loadingContainer: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  emptyContainer: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    padding: 16,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  navigationButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    marginTop: 8,
+  },
+  navButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    gap: 4,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  disabledText: {
+    opacity: 0.5,
+  }
 });
