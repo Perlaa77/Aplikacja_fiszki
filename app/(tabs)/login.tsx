@@ -1,7 +1,6 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useState } from 'react';
@@ -15,130 +14,140 @@ export default function LoginScreen() {
     const router = useRouter();
   
     const handleLogin = async () => {
-      if (!email || !password) {
-        Alert.alert('Błąd', 'Wprowadź email i hasło');
-        return;
-      }
-  
-      setIsLoading(true);
-  
-      try {
-        // 1. Znajdź użytkownika po emailu
-        const user = await getUserByEmail(email);
-        
-        // 2. Sprawdź czy użytkownik istnieje i hasło jest poprawne (wersja bez hashowania)
-        if (!user || password !== user.passwordHash) {
-          Alert.alert('Błąd', 'Nieprawidłowy email lub hasło');
-          setIsLoading(false);
+        if (!email || !password) {
+          Alert.alert('Error', 'Please enter both email and password');
           return;
         }
+      
+        setIsLoading(true);
         
-        // 3. Zapisz ID użytkownika jako prostą sesję
-        await AsyncStorage.setItem('currentUserId', user.id.toString());
-        
-        // 4. Przekieruj do głównego ekranu
-        router.replace('/');
-        
-      } catch (error) {
-        console.error('Błąd logowania:', error);
-        Alert.alert('Błąd', 'Wystąpił problem podczas logowania');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        try {
+          const user = await getUserByEmail(email);
+          
+          if (!user) {
+            Alert.alert('Error', 'No account found with this email');
+            setIsLoading(false);
+            return;
+          }
+          
+          // Proste porównanie haseł (bez hashowania)
+          // Upewnij się, że w bazie danych pole nazywa się 'password' a nie 'passwordHash'
+          if (user.passwordHash !== password) {
+            Alert.alert('Error', 'Incorrect password');
+            setIsLoading(false);
+            return;
+          }
+          
+          // Zapisujemy prostą informację o zalogowaniu
+          await AsyncStorage.setItem('currentUserId', user.id.toString());
+          
+          // Przekierowanie po udanym logowaniu
+          router.replace('/');
+          
+        } catch (error) {
+          console.error('Login error:', error);
+          Alert.alert('Error', 'Failed to login. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      };
   
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Logowanie</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#888"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Hasło"
-          placeholderTextColor="#888"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Zaloguj się</Text>
-          )}
-        </TouchableOpacity>
-        
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Nie masz konta?</Text>
-          <TouchableOpacity onPress={() => router.push('/register')}>
-            <Text style={styles.footerLink}>Zarejestruj się</Text>
+      <ThemedView style={styles.mainContainer}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <ThemedText type="title" style={styles.title}>Login</ThemedText>
+          
+          <ThemedView style={styles.inputContainer}>
+            <TextInput
+              style={[styles.input, styles.darkText]}
+              placeholder="Email"
+              placeholderTextColor="#888"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            
+            <TextInput
+              style={[styles.input, styles.darkText]}
+              placeholder="Password"
+              placeholderTextColor="#888"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </ThemedView>
+    
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.disabledButton]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <ThemedText style={styles.buttonText}>Sign In</ThemedText>
+            )}
           </TouchableOpacity>
-        </View>
-      </View>
+    
+          <TouchableOpacity onPress={() => router.push('/register')}>
+            <ThemedText style={[styles.linkText, styles.darkText]}>Don't have an account? Register</ThemedText>
+          </TouchableOpacity>
+        </ScrollView>
+      </ThemedView>
     );
-  }
-  
-  const styles = StyleSheet.create({
-    container: {
+}
+
+const styles = StyleSheet.create({
+    mainContainer: {
       flex: 1,
+      backgroundColor: '#000',
+    },
+    container: {
+      flexGrow: 1,
       justifyContent: 'center',
       padding: 20,
-      backgroundColor: '#fff',
     },
     title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      marginBottom: 30,
       textAlign: 'center',
-      color: '#333',
+      marginVertical: 20,
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#FFB6C1',
+    },
+    inputContainer: {
+      marginVertical: 10,
     },
     input: {
       height: 50,
-      borderColor: '#ddd',
       borderWidth: 1,
-      borderRadius: 8,
-      paddingHorizontal: 15,
+      borderColor: '#333',
+      borderRadius: 10,
+      padding: 10,
       marginBottom: 15,
-      backgroundColor: '#f9f9f9',
+      backgroundColor: '#1a1a1a',
+    },
+    darkText: {
+      color: '#FFF',
     },
     button: {
-      backgroundColor: '#007AFF',
-      padding: 15,
-      borderRadius: 8,
+      borderRadius: 10,
+      padding: 16,
       alignItems: 'center',
-      marginTop: 10,
+      marginVertical: 10,
+      backgroundColor: '#FFB6C1',
+    },
+    disabledButton: {
+      backgroundColor: '#FFD1DC',
     },
     buttonText: {
-      color: '#fff',
+      fontSize: 18,
       fontWeight: 'bold',
-      fontSize: 16,
+      color: '#000',
     },
-    footer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      marginTop: 20,
+    linkText: {
+      textAlign: 'center',
+      marginTop: 10,
     },
-    footerText: {
-      color: '#666',
-      marginRight: 5,
-    },
-    footerLink: {
-      color: '#007AFF',
-      fontWeight: 'bold',
-    },
-  });
+});

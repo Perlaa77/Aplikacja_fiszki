@@ -1,8 +1,10 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from 'react';
 import { saveUser, isEmailRegistered } from '@/database/flashcardDB';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
 
 export default function RegisterScreen() {
     const [username, setUsername] = useState('');
@@ -14,163 +16,149 @@ export default function RegisterScreen() {
   
     const handleRegister = async () => {
       if (!username || !email || !password || !confirmPassword) {
-        Alert.alert('Błąd', 'Wypełnij wszystkie pola');
+        alert('Please fill all fields');
         return;
       }
   
       if (password !== confirmPassword) {
-        Alert.alert('Błąd', 'Hasła nie są identyczne');
-        return;
-      }
-  
-      // Walidacja emaila
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        Alert.alert('Błąd', 'Wprowadź poprawny adres email');
+        alert("Passwords don't match");
         return;
       }
   
       setIsLoading(true);
   
       try {
-        // Sprawdź czy email jest już zarejestrowany
-        const emailRegistered = await isEmailRegistered(email);
-        if (emailRegistered) {
-          Alert.alert('Błąd', 'Ten email jest już zarejestrowany');
-          setIsLoading(false);
+        if (await isEmailRegistered(email)) {
+          alert('Email is already registered');
           return;
         }
   
-        // Utwórz nowego użytkownika (w rzeczywistej aplikacji powinno się zahashować hasło!)
-        const newUser = {
-          id: Date.now(), // Używamy timestamp jako ID
+        await saveUser({
+          id: Date.now(),
           username,
-          email: email.toLowerCase(), // Zawsze zapisuj email małymi literami
-          passwordHash: password // UWAGA: W prawdziwej aplikacji musisz zahashować hasło!
-        };
+          email,
+          passwordHash: password
+        });
   
-        // Zapisz użytkownika
-        await saveUser(newUser);
-  
-        Alert.alert('Sukces', 'Konto zostało utworzone pomyślnie');
+        alert('Account created successfully');
         router.push('/login');
       } catch (error) {
-        console.error('Błąd rejestracji:', error);
-        Alert.alert('Błąd', `Wystąpił problem podczas rejestracji: ${error || 'Spróbuj ponownie'}`);
+        console.error(error);
+        alert('Registration failed');
       } finally {
         setIsLoading(false);
       }
     };
   
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Rejestracja</Text>
+      <ScrollView contentContainerStyle={styles.container}>
+        <ThemedText type="title" style={styles.title}>Register</ThemedText>
         
-        <TextInput
-          style={styles.input}
-          placeholder="Nazwa użytkownika"
-          placeholderTextColor="#888"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="words"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email (np. twojemail@example.com)"
-          placeholderTextColor="#888"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Hasło (min. 6 znaków)"
-          placeholderTextColor="#888"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Potwierdź hasło"
-          placeholderTextColor="#888"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-        />
-        
-        <TouchableOpacity 
-          style={styles.button} 
+        <ThemedView style={styles.inputContainer}>
+          <TextInput
+            style={[styles.input, styles.darkText]}
+            placeholder="Username"
+            placeholderTextColor="#666"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+          />
+          
+          <TextInput
+            style={[styles.input, styles.darkText]}
+            placeholder="Email"
+            placeholderTextColor="#666"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          
+          <TextInput
+            style={[styles.input, styles.darkText]}
+            placeholder="Password"
+            placeholderTextColor="#666"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+          />
+          
+          <TextInput
+            style={[styles.input, styles.darkText]}
+            placeholder="Confirm Password"
+            placeholderTextColor="#666"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            autoCapitalize="none"
+          />
+        </ThemedView>
+  
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.disabledButton]}
           onPress={handleRegister}
           disabled={isLoading}
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Zarejestruj się</Text>
+            <ThemedText style={[styles.buttonText]}>Register</ThemedText>
           )}
         </TouchableOpacity>
-        
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Masz już konto?</Text>
-          <TouchableOpacity onPress={() => router.push('/login')}>
-            <Text style={styles.footerLink}>Zaloguj się</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
   
-  const styles = StyleSheet.create({
+        <TouchableOpacity onPress={() => router.push('/login')}>
+          <ThemedText style={[styles.linkText, styles.darkText]}>Already have an account? Login</ThemedText>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+}
+
+const styles = StyleSheet.create({
     container: {
-      flex: 1,
+      flexGrow: 1,
       justifyContent: 'center',
       padding: 20,
-      backgroundColor: '#fff',
     },
     title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      marginBottom: 30,
       textAlign: 'center',
-      color: '#333',
+      marginVertical: 20,
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#FFB6C1',
+    },
+    inputContainer: {
+      marginVertical: 10,
     },
     input: {
       height: 50,
-      borderColor: '#ddd',
       borderWidth: 1,
-      borderRadius: 8,
-      paddingHorizontal: 15,
+      borderColor: '#ddd',
+      borderRadius: 10,
+      padding: 10,
       marginBottom: 15,
-      backgroundColor: '#f9f9f9',
+      backgroundColor: '#fff',
+    },
+    darkText: {
+      color: '#C0C0C0',
     },
     button: {
-      backgroundColor: '#34C759',
-      padding: 15,
-      borderRadius: 8,
+      borderRadius: 10,
+      padding: 16,
       alignItems: 'center',
-      marginTop: 10,
+      marginVertical: 10,
+      backgroundColor: '#FFB6C1', // Light pink
+    },
+    disabledButton: {
+      backgroundColor: '#FFD1DC', // Lighter pink when disabled
     },
     buttonText: {
-      color: '#fff',
+      fontSize: 18,
       fontWeight: 'bold',
-      fontSize: 16,
+      color: '#333',
     },
-    footer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      marginTop: 20,
+    linkText: {
+      textAlign: 'center',
+      marginTop: 10,
     },
-    footerText: {
-      color: '#404040',
-      marginRight: 5,
-    },
-    footerLink: {
-      color: '#007AFF',
-      fontWeight: 'bold',
-    },
-  });
+});
