@@ -14,45 +14,42 @@ export default function LoginScreen() {
     const router = useRouter();
   
     const handleLogin = async () => {
-        if (!email || !password) {
-          Alert.alert('Error', 'Please enter both email and password');
+      if (!email || !password) {
+        Alert.alert('Error', 'Please enter both email and password');
+        return;
+      }
+  
+      setIsLoading(true);
+      
+      try {
+        const user = await getUserByEmail(email);
+        
+        if (!user) {
+          Alert.alert('Error', 'No account found with this email');
+          setIsLoading(false);
           return;
         }
-      
-        setIsLoading(true);
         
-        try {
-          const user = await getUserByEmail(email);
-          
-          if (!user) {
-            Alert.alert('Error', 'No account found with this email');
-            setIsLoading(false);
-            return;
-          }
-          
-          // Proste porównanie haseł (bez hashowania)
-          // Upewnij się, że w bazie danych pole nazywa się 'password' a nie 'passwordHash'
-          if (user.passwordHash !== password) {
-            Alert.alert('Error', 'Incorrect password');
-            setIsLoading(false);
-            return;
-          }
-          
-          // DODANE: Zapisujemy token logowania
-          await AsyncStorage.setItem('userToken', 'dummy-auth-token');
-          // DODANE: Zapisujemy ID użytkownika
-          await AsyncStorage.setItem('userId', user.id.toString());
-          
-          // Przekierowanie po udanym logowaniu
-          router.replace('/');
-          
-        } catch (error) {
-          console.error('Login error:', error);
-          Alert.alert('Error', 'Failed to login. Please try again.');
-        } finally {
+        // Simple password comparison (in production use bcrypt)
+        if (user.passwordHash !== password) {
+          Alert.alert('Error', 'Incorrect password');
           setIsLoading(false);
+          return;
         }
-      };
+        
+        await AsyncStorage.setItem('userToken', 'dummy-auth-token');
+        await AsyncStorage.setItem('currentUserId', user.id.toString());
+        
+        // Redirect to home screen after login
+        router.replace('/(tabs)');
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        Alert.alert('Error', 'Failed to login. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
   
     return (
       <ThemedView style={styles.mainContainer}>

@@ -10,44 +10,35 @@ import { useFocusEffect } from 'expo-router';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Sprawdź stan logowania przy starcie komponentu
+  // Check login status on mount and focus
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem('userToken');
-        setIsLoggedIn(!!token);
-      } catch (error) {
-        console.error('Error checking login status:', error);
-      }
-    };
-
     checkLoginStatus();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      const checkLoginStatus = async () => {
-        try {
-          const token = await AsyncStorage.getItem('userToken');
-          setIsLoggedIn(!!token);
-        } catch (error) {
-          console.error('Error checking login status:', error);
-        }
-      };
       checkLoginStatus();
     }, [])
   );
 
+  const checkLoginStatus = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.error('Error checking login status:', error);
+    }
+  };
+
   const handleProfilePress = async () => {
-  const token = await AsyncStorage.getItem('userToken');
-  if (token) {
-    router.push('/profile');
-  } else {
-    router.push('/login');
-  }
-};
+    if (isLoggedIn) {
+      router.push('/profile');
+    } else {
+      router.push('/login');
+    }
+  };
 
   return (
     <ParallaxScrollView
