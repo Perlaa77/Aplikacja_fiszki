@@ -10,6 +10,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { getAllFlashcards } from '../../database/flashcardDB';
 import { getTopic } from '../../database/flashcardDB';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function TabTwoScreen() {
   const colorScheme = useColorScheme();
@@ -87,7 +88,7 @@ export default function TabTwoScreen() {
         <ThemedView style={styles.emptyContainer}>
           <IconSymbol size={50} name="exclamationmark.triangle" color="#808080" />
           <ThemedText style={styles.emptyText}>No flashcards found</ThemedText>
-          <ThemedText>Create some flashcards to start learning</ThemedText>
+          <ThemedText style={styles.emptyText}> Create some flashcards to start learning</ThemedText>
         </ThemedView>
       );
     }
@@ -135,7 +136,7 @@ export default function TabTwoScreen() {
     >
       <ThemedView style={styles.headerContainer}>
         <ThemedText type="title" style={styles.headerTitle}>
-          Flashcard Master
+          Learning
         </ThemedText>
         <ThemedText style={styles.headerSubtitle}>
           {flashcards.length > 0 
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 8,
-    color: '#4a6da7',
+    color: '#FFB6C1',
   },
   headerSubtitle: {
     fontSize: 16,
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 16,
-    color: '#4a6da7',
+    color: '#FFB6C1',
   },
   cardContainer: {
     marginHorizontal: 8,
@@ -269,6 +270,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: 'rgba(74, 109, 167, 0.1)',
     width: '100%',
+    flexShrink: 1,
+    overflow: 'visible',
+    flexWrap: 'wrap',
+    color: '#888',
+    textAlign: 'center'
   },
   tapPrompt: {
     marginTop: 20,
@@ -308,7 +314,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    backgroundColor: '#4a6da7',
+    backgroundColor: '#FFB6C1',
   },
   navButtonPrev: {
     paddingRight: 16,
