@@ -37,8 +37,14 @@ export default function LoginScreen() {
           return;
         }
         
-        await AsyncStorage.setItem('userToken', 'dummy-auth-token');
-        await AsyncStorage.setItem('currentUserId', user.id.toString());
+        await AsyncStorage.multiSet([
+          ['userToken', 'dummy-auth-token'],
+          ['currentUserId', user.id.toString()]
+        ]);
+        
+        // Confirm values were stored
+        const storedUserId = await AsyncStorage.getItem('currentUserId');
+        console.log('Stored user ID verification:', storedUserId);
         
         // Redirect to home screen after login
         router.replace('/(tabs)');

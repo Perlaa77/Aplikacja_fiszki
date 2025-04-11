@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { router, useRouter } from 'expo-router';
-import { getUser, updateUser, changeUserPassword, deleteUser } from '@/database/flashcardDB';
+import { getUser, updateUser, changeUserPassword, deleteUser, clearUserSession, saveUserSession } from '@/database/flashcardDB';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { ThemedText } from '@/components/ThemedText';
@@ -30,39 +30,72 @@ export default function ProfileScreen() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
 
-  // Check authentication status when screen gains focus
+  const checkAuthAndLoadUser = React.useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      console.log('Token from storage:', token);
+      
+      const userId = await AsyncStorage.getItem('currentUserId');
+      console.log('UserID from storage:', userId);
+      
+      if (!token || !userId) {
+        console.log('Missing auth data:', { token, userId });
+        await clearUserSession();
+        router.replace('/login');
+        return null;
+      }
+      
+      console.log('Fetching user with ID:', userId);
+      const userData = await getUser(parseInt(userId));
+      console.log('User data retrieved:', userData ? 'success' : 'failed');
+      return userData;
+    } catch (error) {
+      console.error('Auth check error details:', error);
+      await clearUserSession();
+      router.replace('/login');
+      return null;
+    }
+  }, [router]);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const initialize = async () => {
+      console.log('Initializing profile screen...');
+      const userData = await checkAuthAndLoadUser();
+      if (isMounted) {
+        if (userData) {
+          setUser(userData);
+          setFormData({
+            username: userData.username,
+            email: userData.email,
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          });
+        }
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    initialize();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [checkAuthAndLoadUser]);
+
   useFocusEffect(
     React.useCallback(() => {
-      const checkAuthAndLoadUser = async () => {
-        setIsCheckingAuth(true);
-        try {
-          const token = await AsyncStorage.getItem('userToken');
-          const userId = await AsyncStorage.getItem('currentUserId');
-          
-          if (!token || !userId) {
-            router.replace('/login');
-            return;
-          }
-          
-          const userData = await getUser(parseInt(userId));
+      console.log('Screen focused - refreshing data');
+      if (!isCheckingAuth) {
+        checkAuthAndLoadUser().then(userData => {
           if (userData) {
             setUser(userData);
-            setFormData(prev => ({
-              ...prev,
-              username: userData.username,
-              email: userData.email
-            }));
           }
-        } catch (error) {
-          console.error('Error loading user:', error);
-          router.replace('/login');
-        } finally {
-          setIsCheckingAuth(false);
-        }
-      };
-      
-      checkAuthAndLoadUser();
-    }, [router])
+        });
+      }
+    }, [isCheckingAuth, checkAuthAndLoadUser])
   );
 
   // Handle profile update
@@ -107,14 +140,12 @@ export default function ProfileScreen() {
     setIsLoading(true);
 
     try {
-      // Sprawdzenie obecnego hasła
       if (user.passwordHash !== formData.currentPassword) {
         Alert.alert('Error', 'Current password is incorrect');
         setIsLoading(false);
         return;
       }
       
-      // Aktualizacja hasła
       await changeUserPassword(user.id, formData.newPassword);
       Alert.alert('Success', 'Password changed successfully');
       setFormData({
@@ -132,9 +163,19 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('userToken');
-    await AsyncStorage.removeItem('currentUserId');
-    router.replace('/login');
+    try {
+      setIsLoading(true);
+      await Promise.all([
+        AsyncStorage.removeItem('userToken'),
+        AsyncStorage.removeItem('currentUserId')
+      ]);
+      router.replace('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to logout');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isCheckingAuth) {
