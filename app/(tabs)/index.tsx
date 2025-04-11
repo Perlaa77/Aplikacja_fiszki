@@ -49,8 +49,6 @@ export default function HomeScreen() {
         />
       }
     >
-      <ThemedText type="title" style={styles.title}>Fistaszki</ThemedText>
-      <ThemedView style={styles.space} />
 
       {/* Learn Button */}
       <TouchableOpacity

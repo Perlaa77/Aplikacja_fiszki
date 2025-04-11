@@ -7,6 +7,11 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useAuth } from '@/hooks/useAuth';
+import { Text, TextStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Mask, Rect, Svg } from 'react-native-svg';
+import { View } from 'react-native';
+
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -15,6 +20,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    GaramondBold: require('../assets/fonts/EBGaramond-VariableFont_wght.ttf'),
   });
 
   // Add null check while fonts are loading
@@ -33,6 +39,25 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
+      <Stack.Screen 
+          name="(tabs)" 
+          options={{ 
+            headerTitle: () => (
+              
+              <Text style={{
+                fontFamily: 'GaramondBold',
+                fontSize: 45,
+                fontWeight: 'bold',
+                color: '#FFB6C1',
+                letterSpacing: 5,
+                textTransform: 'uppercase',
+              }}>
+                Fistaszki
+              </Text>
+            ),
+            headerTitleAlign: 'center'
+          }} 
+        />
         <Stack.Screen 
           name="index" 
           options={{ headerShown: false }}
@@ -50,7 +75,6 @@ export default function RootLayout() {
         />
         {/* Public routes */}
         <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="(public)" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
