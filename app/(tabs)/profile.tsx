@@ -1,13 +1,23 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { getUser, updateUser, changeUserPassword, deleteUser } from '@/database/flashcardDB';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { router, useRouter } from 'expo-router';
+import { getUser, updateUser, changeUserPassword, deleteUser, clearUserSession, saveUserSession } from '@/database/flashcardDB';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { useFocusEffect } from 'expo-router';
+import React from 'react';
 
-const ProfileScreen = () => {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [editing, setEditing] = useState(false);
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  passwordHash: string;
+}
+
+export default function ProfileScreen() {
+  const [user, setUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -15,71 +25,128 @@ const ProfileScreen = () => {
     newPassword: '',
     confirmPassword: ''
   });
-  const [userId, setUserId] = useState<number | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const router = useRouter();
+
+  const checkAuthAndLoadUser = React.useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      console.log('Token from storage:', token);
+      
+      const userId = await AsyncStorage.getItem('currentUserId');
+      console.log('UserID from storage:', userId);
+      
+      if (!token || !userId) {
+        console.log('Missing auth data:', { token, userId });
+        await clearUserSession();
+        router.replace('/login');
+        return null;
+      }
+      
+      console.log('Fetching user with ID:', userId);
+      const userData = await getUser(parseInt(userId));
+      console.log('User data retrieved:', userData ? 'success' : 'failed');
+      return userData;
+    } catch (error) {
+      console.error('Auth check error details:', error);
+      await clearUserSession();
+      router.replace('/login');
+      return null;
+    }
+  }, [router]);
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        // W rzeczywistej aplikacji powinieneś mieć sposób na przechowywanie ID zalogowanego użytkownika
-        const storedUserId = await AsyncStorage.getItem('currentUserId');
-        if (storedUserId) {
-          const id = parseInt(storedUserId);
-          setUserId(id);
-          const userData = await getUser(id);
-          if (userData) {
-            setUser(userData);
-            setFormData({
-              ...formData,
-              username: userData.username,
-              email: userData.email
-            });
-          }
+    let isMounted = true;
+    
+    const initialize = async () => {
+      console.log('Initializing profile screen...');
+      const userData = await checkAuthAndLoadUser();
+      if (isMounted) {
+        if (userData) {
+          setUser(userData);
+          setFormData({
+            username: userData.username,
+            email: userData.email,
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          });
         }
-      } catch (error) {
-        console.error('Error loading user:', error);
+        setIsCheckingAuth(false);
       }
     };
+    
+    initialize();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [checkAuthAndLoadUser]);
 
-    loadUser();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Screen focused - refreshing data');
+      if (!isCheckingAuth) {
+        checkAuthAndLoadUser().then(userData => {
+          if (userData) {
+            setUser(userData);
+          }
+        });
+      }
+    }, [isCheckingAuth, checkAuthAndLoadUser])
+  );
 
-  const handleInputChange = (name: string, value: string) => {
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
+  // Handle profile update
   const handleUpdateProfile = async () => {
-    if (!userId) return;
-
+    if (!user) return;
+    setIsLoading(true);
+    
     try {
-      await updateUser(userId, {
+      await updateUser(user.id, {
         username: formData.username,
         email: formData.email
       });
       Alert.alert('Success', 'Profile updated successfully');
-      setEditing(false);
-      // Refresh user data
-      const updatedUser = await getUser(userId);
-      if (updatedUser) setUser(updatedUser);
+      setIsEditing(false);
+      const updatedUser = await getUser(user.id);
+      setUser(updatedUser);
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile');
-      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
-
+  
   const handleChangePassword = async () => {
-    if (!userId) return;
-
+    if (!user) return;
+    
+    if (!formData.currentPassword) {
+      Alert.alert('Error', 'Please enter your current password');
+      return;
+    }
+    
     if (formData.newPassword !== formData.confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match');
+      Alert.alert('Error', "New passwords don't match");
+      return;
+    }
+    
+    if (formData.currentPassword === formData.newPassword) {
+      Alert.alert('Error', "New password must be different from current password");
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // W rzeczywistej aplikacji powinieneś zweryfikować currentPassword przed zmianą
-      await changeUserPassword(userId, formData.newPassword);
+      if (user.passwordHash !== formData.currentPassword) {
+        Alert.alert('Error', 'Current password is incorrect');
+        setIsLoading(false);
+        return;
+      }
+      
+      await changeUserPassword(user.id, formData.newPassword);
       Alert.alert('Success', 'Password changed successfully');
       setFormData({
         ...formData,
@@ -88,177 +155,208 @@ const ProfileScreen = () => {
         confirmPassword: ''
       });
     } catch (error) {
+      console.error('Error changing password:', error);
       Alert.alert('Error', 'Failed to change password');
-      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!userId) return;
-
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteUser(userId);
-              await AsyncStorage.removeItem('currentUserId');
-              Alert.alert('Success', 'Account deleted successfully');
-              router.replace('/');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete account');
-              console.error(error);
-            }
-          }
-        }
-      ]
-    );
   };
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('currentUserId');
-      router.replace('/');
+      setIsLoading(true);
+      await Promise.all([
+        AsyncStorage.removeItem('userToken'),
+        AsyncStorage.removeItem('currentUserId')
+      ]);
+      router.replace('/login');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to logout');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  if (isCheckingAuth) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#888" />
+      </View>
+    );
+  }
+
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#888" />
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Profile Settings</Text>
+    <ScrollView 
+      contentContainerStyle={styles.scrollContainer}
+      style={styles.container}
+    >
+      <ThemedText type="title" style={styles.title}>Profile</ThemedText>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Information</Text>
+      <ThemedView style={styles.section}>
+        <ThemedText style={styles.sectionTitle}>Account Details</ThemedText>
         
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Username</Text>
-          {editing ? (
+          <ThemedText style={styles.label}>Username</ThemedText>
+          {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.lightText]}
               value={formData.username}
-              onChangeText={(text) => handleInputChange('username', text)}
+              onChangeText={(text) => setFormData({...formData, username: text})}
+              placeholderTextColor="#aaa"
+              autoCapitalize="none"
             />
           ) : (
-            <Text style={styles.value}>{user.username}</Text>
+            <ThemedText style={[styles.value, styles.lightText]}>{user.username}</ThemedText>
           )}
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Email</Text>
-          {editing ? (
+          <ThemedText style={styles.label}>Email</ThemedText>
+          {isEditing ? (
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.lightText]}
               value={formData.email}
-              onChangeText={(text) => handleInputChange('email', text)}
+              onChangeText={(text) => setFormData({...formData, email: text})}
               keyboardType="email-address"
+              placeholderTextColor="#aaa"
+              autoCapitalize="none"
             />
           ) : (
-            <Text style={styles.value}>{user.email}</Text>
+            <ThemedText style={[styles.value, styles.lightText]}>{user.email}</ThemedText>
           )}
         </View>
 
-        {editing ? (
+        {isEditing ? (
           <View style={styles.buttonGroup}>
-            <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleUpdateProfile}>
-              <Text style={styles.buttonText}>Save Changes</Text>
+            <TouchableOpacity 
+              style={[styles.button, styles.saveButton]} 
+              onPress={handleUpdateProfile}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <ThemedText style={styles.buttonText}>Save</ThemedText>
+              )}
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setEditing(false)}>
-              <Text style={styles.buttonText}>Cancel</Text>
+            <TouchableOpacity 
+              style={[styles.button, styles.cancelButton]} 
+              onPress={() => setIsEditing(false)}
+              disabled={isLoading}
+            >
+              <ThemedText style={styles.buttonText}>Cancel</ThemedText>
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity style={[styles.button, styles.editButton]} onPress={() => setEditing(true)}>
-            <Text style={styles.buttonText}>Edit Profile</Text>
+          <TouchableOpacity 
+            style={[styles.button, styles.editButton]} 
+            onPress={() => setIsEditing(true)}
+          >
+            <ThemedText style={styles.buttonText}>Edit</ThemedText>
           </TouchableOpacity>
         )}
-      </View>
+      </ThemedView>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Change Password</Text>
+      <ThemedView style={styles.section}>
+        <ThemedText style={styles.sectionTitle}>Change Password</ThemedText>
         
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Current Password</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.currentPassword}
-            onChangeText={(text) => handleInputChange('currentPassword', text)}
-            secureTextEntry
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>New Password</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.newPassword}
-            onChangeText={(text) => handleInputChange('newPassword', text)}
-            secureTextEntry
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Confirm New Password</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.confirmPassword}
-            onChangeText={(text) => handleInputChange('confirmPassword', text)}
-            secureTextEntry
-          />
-        </View>
-
-        <TouchableOpacity style={[styles.button, styles.changePasswordButton]} onPress={handleChangePassword}>
-          <Text style={styles.buttonText}>Change Password</Text>
+        <TextInput
+          style={[styles.input, styles.lightText]}
+          placeholder="Current Password"
+          placeholderTextColor="#aaa"
+          value={formData.currentPassword}
+          onChangeText={(text) => setFormData({...formData, currentPassword: text})}
+          secureTextEntry
+          autoCapitalize="none"
+        />
+        
+        <TextInput
+          style={[styles.input, styles.lightText]}
+          placeholder="New Password"
+          placeholderTextColor="#aaa"
+          value={formData.newPassword}
+          onChangeText={(text) => setFormData({...formData, newPassword: text})}
+          secureTextEntry
+          autoCapitalize="none"
+        />
+        
+        <TextInput
+          style={[styles.input, styles.lightText]}
+          placeholder="Confirm New Password"
+          placeholderTextColor="#aaa"
+          value={formData.confirmPassword}
+          onChangeText={(text) => setFormData({...formData, confirmPassword: text})}
+          secureTextEntry
+          autoCapitalize="none"
+        />
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.changePasswordButton]} 
+          onPress={handleChangePassword}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <ThemedText style={styles.buttonText}>Change Password</ThemedText>
+          )}
         </TouchableOpacity>
-      </View>
+      </ThemedView>
 
-      <View style={styles.section}>
-        <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
-          <Text style={styles.buttonText}>Logout</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDeleteAccount}>
-          <Text style={[styles.buttonText, styles.deleteButtonText]}>Delete Account</Text>
+      <View style={styles.footer}>
+        <TouchableOpacity 
+          style={[styles.button, styles.logoutButton]} 
+          onPress={handleLogout}
+        >
+          <ThemedText style={styles.buttonText}>Logout</ThemedText>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
+    backgroundColor: '#121212',
+  },
+  scrollContainer: {
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    paddingBottom: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#121212',
   },
   title: {
+    textAlign: 'center',
+    marginBottom: 20,
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#333',
+    color: '#FFB6C1',
+  },
+  lightText: {
+    color: '#fff',
   },
   section: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
     marginBottom: 20,
+    padding: 20,
+    borderRadius: 10,
+    backgroundColor: '#1E1E1E',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 2,
   },
@@ -266,74 +364,70 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 15,
-    color: '#444',
+    color: '#fff',
   },
   inputGroup: {
     marginBottom: 15,
   },
   label: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 5,
+    color: '#aaa',
   },
   input: {
+    height: 50,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    borderColor: '#333',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    backgroundColor: '#2A2A2A',
+    color: '#fff',
   },
   value: {
     fontSize: 16,
-    padding: 10,
-    color: '#333',
+    padding: 15,
+    backgroundColor: '#2A2A2A',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+    color: '#fff',
   },
   buttonGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    gap: 10,
   },
   button: {
-    padding: 12,
-    borderRadius: 5,
+    borderRadius: 10,
+    padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    minHeight: 50,
   },
   buttonText: {
-    color: 'white',
-    fontWeight: '600',
     fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   editButton: {
-    backgroundColor: '#4a90e2',
+    backgroundColor: '#FFB6C1',
   },
   saveButton: {
-    backgroundColor: '#2ecc71',
+    backgroundColor: '#FFCCE5',
     flex: 1,
-    marginRight: 5,
   },
   cancelButton: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#FF8E8E',
     flex: 1,
-    marginLeft: 5,
   },
   changePasswordButton: {
-    backgroundColor: '#9b59b6',
+    backgroundColor: '#FFB6C1',
   },
   logoutButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#FFB6C1',
   },
-  deleteButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e74c3c',
-    marginTop: 15,
-  },
-  deleteButtonText: {
-    color: '#e74c3c',
+  footer: {
+    marginTop: 20,
   },
 });
-
-export default ProfileScreen;

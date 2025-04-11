@@ -311,3 +311,24 @@ export const isEmailRegistered = async (email: string): Promise<boolean> => {
     return false;
   }
 };
+
+// Save session after login/register
+export const saveUserSession = async (userId: number, token: string): Promise<void> => {
+  try {
+    await AsyncStorage.multiSet([
+      ['userToken', token],
+      ['currentUserId', userId.toString()]
+    ]);
+  } catch (error) {
+    handleError(error, 'saveUserSession');
+  }
+};
+
+// Clear session on logout
+export const clearUserSession = async (): Promise<void> => {
+  try {
+    await AsyncStorage.multiRemove(['userToken', 'currentUserId']);
+  } catch (error) {
+    handleError(error, 'clearUserSession');
+  }
+};
