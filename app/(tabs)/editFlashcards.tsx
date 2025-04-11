@@ -4,10 +4,11 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Flashcard, getAllTopics, saveTopic } from '../../database/flashcardDB';
+import { Flashcard, getAllTopics, getTopic, saveTopic, deleteTopic } from '../../database/flashcardDB';
 import { Topic } from '../../database/flashcardDB';
 import { saveFlashcard, getFlashcard, deleteFlashcard, getAllFlashcards } from '../../database/flashcardDB';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { ScreenContainer } from 'react-native-screens';
 
 
 export default function EditFlashcardScreen() {
@@ -71,11 +72,9 @@ export default function EditFlashcardScreen() {
         const flashcards = await getAllFlashcards();
         setAllFlashcards(flashcards);
         
-        // Load all topics
         const topics = await getAllTopics();
         setAllTopics(topics);
         
-        // If we have a topicId, load that topic's info
         if (topicId && topicId !== '0') {
           const foundTopic = topics.find(t => t.id === parseInt(topicId));
           if (foundTopic) {
@@ -123,7 +122,7 @@ export default function EditFlashcardScreen() {
       
       if (topic.id === 0) {
         setTopic({
-          id: topicToSave.id, // Update with the newly saved ID
+          id: topicToSave.id,
           name: '',
           description: ''
         });
@@ -198,7 +197,6 @@ export default function EditFlashcardScreen() {
     setShowTopicDropdown(false);
   };
 
-  // Get the selected topic name to display
   const getSelectedTopicName = () => {
     if (flashcard.topicId === 0) return 'Select a Topic';
     const selectedTopic = allTopics.find(t => t.id === flashcard.topicId);
@@ -213,7 +211,7 @@ export default function EditFlashcardScreen() {
       {error && <ThemedText style={styles.error}>{error}</ThemedText>}
 
     {/* TOPICS */}
-
+    
       <ThemedText style={styles.label}>Topic Title</ThemedText>
       <TextInput
         style={styles.input}
@@ -326,28 +324,26 @@ export default function EditFlashcardScreen() {
         />
       </View>
 
-      <ThemedText style={styles.sectionTitle}>All Flashcards</ThemedText>
-      {allFlashcards.length === 0 ? (
-        <ThemedText style={styles.noCardsText}>No flashcards found</ThemedText>
-      ) : (
-        allFlashcards.map((card) => (
-          <View key={card.id} style={styles.cardContainer}>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardText}>Topic: {card.topicId}</Text>
-              <Text style={styles.cardText}>Front: {card.front}</Text>
-              <Text style={styles.cardText}>Hint: {card.frontHint}</Text>
-              <Text style={styles.cardText}>Back: {card.back}</Text>
-              <Text style={styles.cardText}>Back Info: {card.backInfo}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.deleteButton}
+      <ThemedText style={styles.sectionTitle}>All Flashcards (tap to delete)</ThemedText>
+      <View style={styles.flashcardsContainer}>
+        {allFlashcards.length === 0 ? (
+          <ThemedText style={styles.noCardsText}>No flashcards found</ThemedText>
+        ) : (
+          allFlashcards.map((card) => (
+            <TouchableOpacity 
+              key={card.id} 
+              style={styles.cardContainer}
               onPress={() => handleDelete(card.id)}
             >
-              <Text style={styles.deleteButtonText}>Delete</Text>
+              <ThemedText style={styles.cardText} numberOfLines={1}>Topic: {card.topicId}</ThemedText>
+              <ThemedText style={styles.cardText} numberOfLines={2}>Front: {card.front}</ThemedText>
+              <ThemedText style={styles.cardText} numberOfLines={1}>Hint: {card.frontHint}</ThemedText>
+              <ThemedText style={styles.cardText} numberOfLines={2}>Back: {card.back}</ThemedText>
+              <ThemedText style={styles.cardText} numberOfLines={1}>Back Info: {card.backInfo}</ThemedText>
             </TouchableOpacity>
-          </View>
-        ))
-      )}
+          ))
+        )}
+      </View>
     </ParallaxScrollView>
   );
 }
@@ -401,13 +397,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    paddingHorizontal: 8,
   },
   cardContainer: {
-    width: '100%',
+    width: '48%',
     marginBottom: 12,
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
     padding: 12,
