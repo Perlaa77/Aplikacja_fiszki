@@ -8,12 +8,9 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useAuth } from '@/hooks/useAuth';
 import { Text, TextStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Mask, Rect, Svg } from 'react-native-svg';
+import { Svg, Text as SvgText, LinearGradient, Stop } from 'react-native-svg';
 import { View } from 'react-native';
 
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -23,7 +20,6 @@ export default function RootLayout() {
     GaramondBold: require('../assets/fonts/EBGaramond-VariableFont_wght.ttf'),
   });
 
-  // Add null check while fonts are loading
   const { isLoggedIn } = useAuth();
 
   useEffect(() => {
@@ -39,25 +35,42 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-      <Stack.Screen 
-          name="(tabs)" 
-          options={{ 
-            headerTitle: () => (
-              
-              <Text style={{
-                fontFamily: 'GaramondBold',
-                fontSize: 45,
-                fontWeight: 'bold',
-                color: '#FFB6C1',
-                letterSpacing: 5,
-                textTransform: 'uppercase',
-              }}>
-                Fistaszki
-              </Text>
-            ),
-            headerTitleAlign: 'center'
-          }} 
-        />
+<Stack.Screen 
+  name="(tabs)" 
+  options={{ 
+    headerTitle: () => (
+      <View style={{ height: 60, width: 400 }}>
+        <Svg height="100%" width="100%">
+          <LinearGradient 
+            id="textGradient"
+            x1="0%" 
+            y1="0%"
+            x2="100%"
+            y2="0%"
+            gradientUnits="userSpaceOnUse"
+          >
+            <Stop offset="0%" stopColor="#FFB6C1" stopOpacity="1" />
+            <Stop offset="100%" stopColor="#FF1493" stopOpacity="1" />
+          </LinearGradient>
+          <SvgText
+            x="50%"
+            y="50%"
+            fill="url(#textGradient)"
+            fontSize="45"
+            fontWeight="bold"
+            fontFamily="GaramondBold"
+            textAnchor="middle"
+            alignmentBaseline="middle"
+            letterSpacing="5"
+          >
+            FISTASZKI
+          </SvgText>
+        </Svg>
+      </View>
+    ),
+    headerTitleAlign: 'center'
+  }} 
+/>
         <Stack.Screen 
           name="index" 
           options={{ headerShown: false }}
