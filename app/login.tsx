@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useState } from 'react';
 import { getUserByEmail } from '@/database/flashcardDB';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 
 
 export default function LoginScreen() {
@@ -99,8 +100,24 @@ export default function LoginScreen() {
           <TouchableOpacity onPress={() => router.push('/register')}>
             <ThemedText style={[styles.linkText, styles.darkText]}>Don't have an account? Register</ThemedText>
           </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.replace('/(tabs)')}
+          >
+            <View style={styles.backButtonContent}>
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={'#FFB6C1'} 
+              />
+              <Text style={styles.backButtonText}>Back</Text>
+            </View>
+          </TouchableOpacity>
+          
         </ScrollView>
       </ThemedView>
+      
     );
 }
 
@@ -154,5 +171,20 @@ const styles = StyleSheet.create({
     linkText: {
       textAlign: 'center',
       marginTop: 10,
+    },
+    backButton: {
+      position: 'absolute',
+      top: 40,
+      left: 20,
+      zIndex: 1,
+    },
+    backButtonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButtonText: {
+      color: '#FFB6C1',
+      fontSize: 20,
+      marginLeft: 5,
     },
 });

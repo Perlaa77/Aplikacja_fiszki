@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { saveUser, isEmailRegistered } from '@/database/flashcardDB';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 
 export default function RegisterScreen() {
     const [username, setUsername] = useState('');
@@ -110,6 +111,21 @@ export default function RegisterScreen() {
         <TouchableOpacity onPress={() => router.push('/login')}>
           <ThemedText style={[styles.linkText, styles.darkText]}>Already have an account? Login</ThemedText>
         </TouchableOpacity>
+
+        <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => router.replace('/(tabs)')}
+                  >
+                    <View style={styles.backButtonContent}>
+                      <IconSymbol 
+                        size={20} 
+                        name="chevron.backward" 
+                        color={'#FFB6C1'} 
+                      />
+                      <Text style={styles.backButtonText}>Back</Text>
+                    </View>
+                  </TouchableOpacity>
+                  
       </ScrollView>
     );
 }
@@ -147,10 +163,10 @@ const styles = StyleSheet.create({
       padding: 16,
       alignItems: 'center',
       marginVertical: 10,
-      backgroundColor: '#FFB6C1', // Light pink
+      backgroundColor: '#FFB6C1', 
     },
     disabledButton: {
-      backgroundColor: '#FFD1DC', // Lighter pink when disabled
+      backgroundColor: '#FFD1DC', 
     },
     buttonText: {
       fontSize: 18,
@@ -160,5 +176,20 @@ const styles = StyleSheet.create({
     linkText: {
       textAlign: 'center',
       marginTop: 10,
+    },
+    backButton: {
+      position: 'absolute',
+      top: 40,
+      left: 20,
+      zIndex: 1,
+    },
+    backButtonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButtonText: {
+      color: '#FFB6C1',
+      fontSize: 20,
+      marginLeft: 5,
     },
 });
