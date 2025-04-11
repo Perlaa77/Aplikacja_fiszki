@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Flashcard } from '../../database/flashcardDB';
+import { Flashcard, getAllTopics, saveTopic } from '../../database/flashcardDB';
+import { Topic } from '../../database/flashcardDB';
 import { saveFlashcard, getFlashcard, deleteFlashcard, getAllFlashcards } from '../../database/flashcardDB';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 
@@ -15,7 +16,6 @@ export default function EditFlashcardScreen() {
   const id = params.id as string;
   const topicId = params.topicId as string;
 
-  // Initialize state with function to handle prop changes
   const [flashcard, setFlashcard] = useState({
     id: parseInt(id || '0'),
     topicId: parseInt(topicId || '0'),
@@ -25,11 +25,18 @@ export default function EditFlashcardScreen() {
     backInfo: ''
   });
 
+  const [topic, setTopic] = useState({
+    id: parseInt(id || '0'),
+    name: '',
+    description: ''
+  });
+
   const [allFlashcards, setAllFlashcards] = useState<Flashcard[]>([]);
+  const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false);
 
-  // Reset form when ID changes to 0 (new flashcard)
   useEffect(() => {
     if (parseInt(id) === 0) {
       setFlashcard({
@@ -43,12 +50,10 @@ export default function EditFlashcardScreen() {
     }
   }, [id, topicId]);
 
-  // Load data when component mounts or ID changes
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Load existing flashcard if editing
         if (id && id !== '0') {
           const loadedFlashcard = await getFlashcard(parseInt(id));
           if (loadedFlashcard) {
@@ -63,9 +68,24 @@ export default function EditFlashcardScreen() {
           }
         }
 
-        // Always load all flashcards
         const flashcards = await getAllFlashcards();
         setAllFlashcards(flashcards);
+        
+        // Load all topics
+        const topics = await getAllTopics();
+        setAllTopics(topics);
+        
+        // If we have a topicId, load that topic's info
+        if (topicId && topicId !== '0') {
+          const foundTopic = topics.find(t => t.id === parseInt(topicId));
+          if (foundTopic) {
+            setTopic({
+              id: foundTopic.id,
+              name: foundTopic.name,
+              description: foundTopic.description || ''
+            });
+          }
+        }
       } catch (err) {
         setError('Failed to load data');
         console.error(err);
@@ -75,10 +95,48 @@ export default function EditFlashcardScreen() {
     };
 
     loadData();
-  }, [id]);
+  }, [id, topicId]);
 
   const handleChange = (field: keyof typeof flashcard, value: string) => {
     setFlashcard(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleChangeTopic = (field: keyof typeof topic, value: string) => {
+    setTopic(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleTopic = async () => {
+    if (!topic.name.trim()) {
+      setError('Topic title is required');
+      return;
+    }
+    setIsLoading(true);
+
+    try {
+      const topicToSave = { ...topic };
+
+      if (topicToSave.id === 0) {
+        topicToSave.id = Date.now();
+      }
+
+      await saveTopic(topicToSave);
+      
+      if (topic.id === 0) {
+        setTopic({
+          id: topicToSave.id, // Update with the newly saved ID
+          name: '',
+          description: ''
+        });
+      }
+
+      const updatedTopics = await getAllTopics();
+      setAllTopics(updatedTopics);
+    } catch (err) {
+      setError('Failed to save topic');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -89,17 +147,14 @@ export default function EditFlashcardScreen() {
 
     setIsLoading(true);
     try {
-      // Create new object to avoid state mutation
       const flashcardToSave = { ...flashcard };
 
-      // Generate new ID only for new flashcards
       if (flashcardToSave.id === 0) {
         flashcardToSave.id = Date.now();
       }
 
       await saveFlashcard(flashcardToSave);
       
-      // Refresh the list and clear form for new entries
       if (flashcard.id === 0) {
         setFlashcard(prev => ({
           ...prev,
@@ -138,6 +193,18 @@ export default function EditFlashcardScreen() {
     }
   };
 
+  const handleSelectTopic = (selectedTopic: Topic) => {
+    setFlashcard(prev => ({ ...prev, topicId: selectedTopic.id }));
+    setShowTopicDropdown(false);
+  };
+
+  // Get the selected topic name to display
+  const getSelectedTopicName = () => {
+    if (flashcard.topicId === 0) return 'Select a Topic';
+    const selectedTopic = allTopics.find(t => t.id === flashcard.topicId);
+    return selectedTopic ? selectedTopic.name : 'Select a Topic';
+  };
+
   if (isLoading) return <ThemedView style={styles.container}><ThemedText>Loading...</ThemedText></ThemedView>;
 
   return (
@@ -145,7 +212,76 @@ export default function EditFlashcardScreen() {
       headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }} headerImage={<></>}   >
       {error && <ThemedText style={styles.error}>{error}</ThemedText>}
 
-      {/* Input Fields (existing code) */}
+    {/* TOPICS */}
+
+      <ThemedText style={styles.label}>Topic Title</ThemedText>
+      <TextInput
+        style={styles.input}
+        value={topic.name}
+        onChangeText={(text) => handleChangeTopic('name', text)}
+        placeholder="Enter title"
+        multiline
+      />
+
+      <ThemedText style={styles.label}>Topic Description</ThemedText>
+      <TextInput
+        style={styles.input}
+        value={topic.description}
+        onChangeText={(text) => handleChangeTopic('description', text)}
+        placeholder="Enter description (optional)"
+        multiline
+      />
+
+      <View style={styles.buttonContainer}>
+        <Button title="Save Topic" onPress={handleTopic} disabled={isLoading} />
+      </View>
+
+    {/* FLASHCARDS */}
+
+      {/* Topic Dropdown */}
+      <ThemedText style={styles.label}>Select Topic for Flashcard</ThemedText>
+      <TouchableOpacity 
+        style={styles.dropdown}
+        onPress={() => setShowTopicDropdown(true)}
+      >
+        <ThemedText>{getSelectedTopicName()}</ThemedText>
+      </TouchableOpacity>
+
+      {/* Topic Selection Modal */}
+      <Modal
+        visible={showTopicDropdown}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowTopicDropdown(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>Select a Topic</ThemedText>
+            
+            <ScrollView style={styles.topicList}>
+              {allTopics.length === 0 ? (
+                <ThemedText style={styles.noTopicsText}>No topics available. Create one first.</ThemedText>
+              ) : (
+                allTopics.map((t) => (
+                  <TouchableOpacity
+                    key={t.id}
+                    style={[
+                      styles.topicItem,
+                      t.id === flashcard.topicId && styles.selectedTopicItem
+                    ]}
+                    onPress={() => handleSelectTopic(t)}
+                  >
+                    <ThemedText style={styles.topicItemText}>{t.name}</ThemedText>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+            
+            <Button title="Cancel" onPress={() => setShowTopicDropdown(false)} />
+          </View>
+        </View>
+      </Modal>
+
       <ThemedText style={styles.label}>Front (Question)</ThemedText>
       <TextInput
         style={styles.input}
@@ -183,10 +319,13 @@ export default function EditFlashcardScreen() {
       />
       
       <View style={styles.buttonContainer}>
-        <Button title="Save" onPress={handleSave} disabled={isLoading} />
+        <Button 
+          title="Save" 
+          onPress={handleSave} 
+          disabled={isLoading || flashcard.topicId === 0} 
+        />
       </View>
 
-      {/* Flashcards List */}
       <ThemedText style={styles.sectionTitle}>All Flashcards</ThemedText>
       {allFlashcards.length === 0 ? (
         <ThemedText style={styles.noCardsText}>No flashcards found</ThemedText>
@@ -194,8 +333,11 @@ export default function EditFlashcardScreen() {
         allFlashcards.map((card) => (
           <View key={card.id} style={styles.cardContainer}>
             <View style={styles.cardContent}>
+              <Text style={styles.cardText}>Topic: {card.topicId}</Text>
               <Text style={styles.cardText}>Front: {card.front}</Text>
+              <Text style={styles.cardText}>Hint: {card.frontHint}</Text>
               <Text style={styles.cardText}>Back: {card.back}</Text>
+              <Text style={styles.cardText}>Back Info: {card.backInfo}</Text>
             </View>
             <TouchableOpacity
               style={styles.deleteButton}
@@ -232,6 +374,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: '#f8f8f8',
   },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    padding: 14,
+    marginBottom: 20,
+    backgroundColor: '#f5f5f5',
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -247,14 +397,20 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 12,
   },
+  flashcardsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
   cardContainer: {
+    width: '100%',
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 8,
   },
   cardContent: {
     flex: 1,
@@ -279,5 +435,44 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginVertical: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 20,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  topicList: {
+    marginBottom: 16,
+    maxHeight: 300,
+  },
+  topicItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  selectedTopicItem: {
+    backgroundColor: '#e6f7ff',
+  },
+  topicItemText: {
+    fontSize: 16,
+  },
+  noTopicsText: {
+    textAlign: 'center',
+    marginVertical: 20,
+    color: '#666',
   },
 });

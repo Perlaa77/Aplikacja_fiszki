@@ -10,7 +10,7 @@ export interface Flashcard {
     backInfo?: string;
   }
 
-  interface Topic {
+  export interface Topic {
     id: number;
     name: string;
     description?: string;
@@ -144,6 +144,25 @@ export const deleteTopic = async (id: number): Promise<void> => {
         handleError(error, 'deleteTopic');
     }
 };
+
+export const getAllTopics = async (): Promise<Topic[]> => {
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const topicKeys = allKeys.filter(key => key.startsWith(KEYS.TOPIC));
+    if(topicKeys.length === 0) return [];
+
+    const topicsData = await AsyncStorage.multiGet(topicKeys);
+    
+    const topics: Topic[] = topicsData
+      .map(([_, value]) => (value ? JSON.parse(value) : null))
+      .filter(item => item !== null);
+    
+      return topics;
+  } catch (error) {
+    handleError(error, 'getAllTopics');
+    return [];
+  }
+}
 
 // Add this function to your flashcardDB.ts file
 
