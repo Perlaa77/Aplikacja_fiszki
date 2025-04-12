@@ -9,6 +9,7 @@ import { Topic } from '../../database/flashcardDB';
 import { saveFlashcard, getFlashcard, deleteFlashcard, getAllFlashcards } from '../../database/flashcardDB';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ScreenContainer } from 'react-native-screens';
+import { Button1 } from '@/components/Button1';
 
 
 export default function EditFlashcardScreen() {

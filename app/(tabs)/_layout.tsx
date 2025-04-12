@@ -55,13 +55,6 @@ export default function TabLayout() {
 
       {/* Hidden screens - accessible via navigation but not shown in tab bar */}
       <Tabs.Screen
-        name="explore"
-        options={{
-          tabBarItemStyle: { display: 'none' }, // Removes space in tab bar
-          tabBarButton: () => null, // Prevents rendering the tab button
-        }}
-      />
-      <Tabs.Screen
         name="editFlashcards"
         options={{
           tabBarItemStyle: { display: 'none' }, // Removes space in tab bar
