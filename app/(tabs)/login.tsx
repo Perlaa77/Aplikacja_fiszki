@@ -47,8 +47,8 @@ export default function LoginScreen() {
         const storedUserId = await AsyncStorage.getItem('currentUserId');
         console.log('Stored user ID verification:', storedUserId);
         
-        // Redirect to home screen after login
-        router.replace('/(tabs)');
+        // Redirect to profile after login
+        router.replace('/profile');
         
       } catch (error) {
         console.error('Login error:', error);
@@ -101,20 +101,6 @@ export default function LoginScreen() {
             <ThemedText style={[styles.linkText, styles.darkText]}>Don't have an account? Register</ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.replace('/(tabs)')}
-          >
-            <View style={styles.backButtonContent}>
-              <IconSymbol 
-                size={20} 
-                name="chevron.backward" 
-                color={'#FFB6C1'} 
-              />
-              <Text style={styles.backButtonText}>Back</Text>
-            </View>
-          </TouchableOpacity>
-          
         </ScrollView>
       </ThemedView>
       

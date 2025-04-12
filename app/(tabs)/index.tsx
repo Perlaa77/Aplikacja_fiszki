@@ -49,24 +49,6 @@ export default function HomeScreen() {
         />
       }
     >
-
-      {/* Learn Button */}
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#FACFFF' }]}
-        onPress={() => router.push('/explore')}
-      >
-        <View style={styles.buttonContent}>
-          <Image
-            source={require('@/assets/images/partial-react-logo.png')}
-            style={styles.buttonImage}
-          />
-          <View style={styles.textContainer}>
-            <Text style={styles.buttonTitle}>Learn</Text>
-            <Text style={styles.buttonDescription}>Go learn!</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-
       {/* Edit Button */}
       <TouchableOpacity
         style={[styles.button, { backgroundColor: '#BACDFF' }]}
@@ -80,25 +62,6 @@ export default function HomeScreen() {
           <View style={styles.textContainer}>
             <Text style={styles.buttonTitle}>Edit</Text>
             <Text style={styles.buttonDescription}>Go to edit</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-
-      {/* Profile Button */}
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#FFDBA1' }]}
-        onPress={handleProfilePress}
-      >
-        <View style={styles.buttonContent}>
-          <Image
-            source={require('@/assets/images/partial-react-logo.png')}
-            style={styles.buttonImage}
-          />
-          <View style={styles.textContainer}>
-            <Text style={styles.buttonTitle}>Profile</Text>
-            <Text style={styles.buttonDescription}>
-              {isLoggedIn ? 'Profile settings' : 'Login to your account'}
-            </Text>
           </View>
         </View>
       </TouchableOpacity>

@@ -9,8 +9,7 @@ export default function LearnScreen() {
 
   // Start learning session
   const startSession = () => {
-    // Just navigate to explore for now
-    router.push('/explore');
+    router.push('/session');
   };
 
   return (
