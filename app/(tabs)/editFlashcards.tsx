@@ -9,7 +9,6 @@ import { Topic } from '../../database/flashcardDB';
 import { saveFlashcard, getFlashcard, deleteFlashcard, getAllFlashcards } from '../../database/flashcardDB';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ScreenContainer } from 'react-native-screens';
-import { Button1 } from '@/components/Button1';
 
 
 export default function EditFlashcardScreen() {
@@ -380,9 +379,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginVertical: 24,
+    alignItems: 'center',
+    padding: 20,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
   },
   error: {
     color: 'red',

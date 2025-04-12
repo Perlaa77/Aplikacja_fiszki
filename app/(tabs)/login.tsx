@@ -85,6 +85,7 @@ export default function LoginScreen() {
             />
           </ThemedView>
     
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, isLoading && styles.disabledButton]}
             onPress={handleLogin}
@@ -96,6 +97,7 @@ export default function LoginScreen() {
               <ThemedText style={styles.buttonText}>Sign In</ThemedText>
             )}
           </TouchableOpacity>
+        </View>
     
           <TouchableOpacity onPress={() => router.push('/register')}>
             <ThemedText style={[styles.linkText, styles.darkText]}>Don't have an account? Register</ThemedText>
@@ -139,20 +141,30 @@ const styles = StyleSheet.create({
     darkText: {
       color: '#FFF',
     },
+    buttonContainer: {
+      alignItems: 'center',
+      padding: 20,
+    },
     button: {
-      borderRadius: 10,
+      backgroundColor: '#007AFF',
       padding: 16,
+      borderRadius: 10,
+      width: '80%',
       alignItems: 'center',
       marginVertical: 10,
-      backgroundColor: '#FFB6C1',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    buttonText: {
+      color: 'white',
+      fontSize: 18,
+      fontWeight: '600',
     },
     disabledButton: {
       backgroundColor: '#FFD1DC',
-    },
-    buttonText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#000',
     },
     linkText: {
       textAlign: 'center',

@@ -87,13 +87,15 @@ export default function LearnScreen() {
         </View>
       </View>
 
-      {/* Start Button */}
-      <TouchableOpacity
-        style={styles.startButton}
-        onPress={startSession}
-      >
-        <Text style={styles.startButtonText}>Start Session</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+              {/* Start Button */}
+              <TouchableOpacity
+                style={styles.button}
+                onPress={startSession}
+              >
+                <Text style={styles.buttonText}>Start Session</Text>
+              </TouchableOpacity>
+        </View>
 
       <View style={styles.spacer}></View>
     </ScrollView>
@@ -211,21 +213,24 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
   },
-  startButton: {
+  buttonContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  button: {
     backgroundColor: '#007AFF',
     padding: 16,
     borderRadius: 10,
+    width: '80%',
     alignItems: 'center',
-    marginHorizontal: 15,
-    marginTop: 30,
-    marginBottom: 10,
+    marginVertical: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
   },
-  startButtonText: {
+  buttonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: '600',

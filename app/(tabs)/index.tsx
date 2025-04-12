@@ -1,11 +1,9 @@
 // app/index.tsx
 import React, { useEffect, useState } from 'react';
-import { Image } from 'react-native';
+import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Button1 } from '@/components/Button1';
-
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -41,12 +39,40 @@ export default function HomeScreen() {
         <Image source={require('@/assets/images/partial-react-logo.png')} />
       }
     >
-      <Button1
-        title="Edit"
-        description="Go to edit"
-        imageSource={require('@/assets/images/partial-react-logo.png')}
-        onPress={() => router.push('/editFlashcards')}
-      />
+      <View style={styles.buttonContainer}>
+        {/* Edit Button */}
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push('/editFlashcards')}
+        >
+          <Text style={styles.buttonText}>Edit Flashcards</Text>
+        </TouchableOpacity>
+      </View>
     </ParallaxScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  buttonContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  }
+});

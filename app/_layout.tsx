@@ -60,4 +60,26 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     backgroundColor: '#F0F4FA',
   },
+  buttonContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
 });
