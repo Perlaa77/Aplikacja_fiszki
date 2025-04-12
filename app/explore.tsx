@@ -7,8 +7,8 @@ import { ScrollView } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { getAllFlashcards } from '../../database/flashcardDB';
-import { getTopic } from '../../database/flashcardDB';
+import { getAllFlashcards } from '../database/flashcardDB';
+import { getTopic } from '../database/flashcardDB';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useFocusEffect } from '@react-navigation/native';
 

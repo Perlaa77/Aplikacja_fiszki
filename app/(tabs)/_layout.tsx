@@ -14,17 +14,19 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        // Configure global tab bar styles and behavior
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        tabBarButton: HapticTab,
-        headerShown: false,
-        tabBarBackground: TabBarBackground,
+        tabBarButton: HapticTab, // Custom tab button with haptic feedback
+        headerShown: false, // Hide headers globally
+        tabBarBackground: TabBarBackground, // Custom background component
         tabBarStyle: Platform.select({
           ios: {
-            position: 'absolute',
+            position: 'absolute', // iOS-specific styling
           },
-          default: {},
+          default: {}, // Default styling for other platforms
         }),
       }}>
+      {/* Visible tabs that appear in the navigation bar */}
       <Tabs.Screen
         name="index"
         options={{
@@ -34,21 +36,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="learn"
         options={{
           title: 'Learn',
           headerShown: false,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="book.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="editFlashcards"
-        options={{
-          title: 'Edit Flashcards',
-          headerShown: false,
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="edit-note" size={28} color={color} />
-          ),
         }}
       />
       <Tabs.Screen
@@ -58,6 +50,36 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <FontAwesome name="user" size={28} color={color} />
           ),
+        }}
+      />
+
+      {/* Hidden screens - accessible via navigation but not shown in tab bar */}
+      <Tabs.Screen
+        name="explore"
+        options={{
+          tabBarItemStyle: { display: 'none' }, // Removes space in tab bar
+          tabBarButton: () => null, // Prevents rendering the tab button
+        }}
+      />
+      <Tabs.Screen
+        name="editFlashcards"
+        options={{
+          tabBarItemStyle: { display: 'none' }, // Removes space in tab bar
+          tabBarButton: () => null, // Prevents rendering the tab button
+        }}
+      />
+      <Tabs.Screen
+        name="login"
+        options={{
+          tabBarItemStyle: { display: 'none' }, // Removes space in tab bar
+          tabBarButton: () => null, // Prevents rendering the tab button
+        }}
+      />
+      <Tabs.Screen
+        name="register"
+        options={{
+          tabBarItemStyle: { display: 'none' }, // Removes space in tab bar
+          tabBarButton: () => null, // Prevents rendering the tab button
         }}
       />
     </Tabs>
