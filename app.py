@@ -22,8 +22,8 @@ if "active_page" not in st.session_state:
 if "selected_profile_id" not in st.session_state:
     st.session_state.selected_profile_id = None
 
-# Pasek nawigacyjny (dla wszystkich stron poza "Sesja nauki")
-if st.session_state.active_page != "Sesja nauki":
+# Pasek nawigacyjny
+if st.session_state.active_page not in ["Sesja nauki", "Fiszki", "Dodaj zestaw", "Dodaj fiszkę"]:
     page = st.sidebar.radio('', ['Strona główna','Ucz się','Zestawy i fiszki','Profil'])
     st.session_state.active_page = page
 
@@ -46,8 +46,14 @@ if st.session_state.active_page == "Strona główna":
 # Strona konfiguracji nauki
 elif st.session_state.active_page == "Ucz się":
     st.header('Ucz się!')
-    st.subheader("Konfiguracja sesji nauki")
 
+    # Informacja jeśli nie wybrano profilu
+    if st.session_state.selected_profile_id is None:
+        st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
+        st.stop()
+
+    st.subheader("Konfiguracja sesji nauki")
+    
     # Wybór trybu nauki
     study_mode = st.radio("Wybierz tryb nauki:", ['Klasyczny', 'Test'])
 
@@ -59,6 +65,7 @@ elif st.session_state.active_page == "Ucz się":
 
     if st.button("Rozpocznij naukę"):
         st.session_state.active_page = "Sesja nauki"
+        st.rerun()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Strona nauki
@@ -66,11 +73,122 @@ elif st.session_state.active_page == "Sesja nauki":
 
     if st.button("← Powrót do konfiguracji"):
         st.session_state.active_page = "Ucz się"
+        st.rerun()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Strona zarządzania zestawami i fiszkami
+# Strona zarządzania zestawami
 elif st.session_state.active_page == "Zestawy i fiszki":
-    st.subheader("elo")
+    st.header("Zestawy i fiszki")
+
+    # Informacja jeśli nie wybrano profilu
+    if st.session_state.selected_profile_id is None:
+        st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
+        st.stop()
+
+    # Przyciski dodawania zestawów i fiszek
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("➕ Dodaj nowy zestaw", key="dodaj_zestaw"):
+            st.session_state.active_page = "Dodaj zestaw"
+            st.rerun()
+    with col2:
+        if st.button("➕ Dodaj nową fiszkę", key="dodaj_fiszke"):
+            st.session_state.manage_set_id = None
+            st.session_state.active_page = "Dodaj fiszkę"
+            st.rerun()
+
+    # Zestawy danego profilu
+    st.markdown("---")
+    st.subheader("Twoje zestawy:")
+    profile_id = st.session_state.selected_profile_id
+    user_sets = zestawy_df[zestawy_df["id_profilu"] == profile_id]
+    if not user_sets.empty:
+        for _, row in user_sets.iterrows():
+            if st.button(row["nazwa"], key=f"zestaw_{row['id']}"):
+                st.session_state.manage_set_id = row["id"]
+                st.session_state.active_page = "Fiszki"
+                st.rerun()
+    else:
+        st.write("Brak zestawów.")
+
+    # Fiszki bez przypisanego zestawu
+    st.markdown("---")
+    st.subheader("Fiszki bez zestawu:")
+    unassigned = fiszki_df[
+        (fiszki_df["id_profilu"] == profile_id) &
+        (fiszki_df["id_zestawu"].isna())
+    ]
+    if not unassigned.empty:
+        if st.button("Fiszki bez zestawu"):
+            st.session_state.manage_set_id = None
+            st.session_state.active_page = "Fiszki"
+            st.rerun()
+    else:
+        st.write("Brak fiszek bez zestawu.")
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Strona zarządzania fiszkami w konkretnym zestawie
+elif st.session_state.active_page == "Fiszki":
+
+    # Przycisk powrotu
+    if st.button("← Powrót do zestawów"):
+        st.session_state.active_page = "Zestawy i fiszki"
+        st.rerun()
+
+    # Wyświetlanie fiszek w zestawie
+    if st.session_state.manage_set_id is not None:
+        zestaw = zestawy_df[zestawy_df["id"] == st.session_state.manage_set_id].iloc[0]
+        st.header(f"Zestaw: {zestaw['nazwa']}")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("➕ Dodaj fiszkę"):
+                st.session_state.active_page = "Dodaj fiszkę"
+                st.rerun()
+        with col2:
+            if st.button("✏️ Edytuj zestaw"):
+                st.session_state.active_page = "Dodaj zestaw"
+                st.rerun()
+        fiszki = fiszki_df[
+            (fiszki_df["id_zestawu"] == zestaw["id"]) &
+            (fiszki_df["id_profilu"] == st.session_state.selected_profile_id)
+        ]
+    # Wyświetlanie fiszek, które nie mają zestawu
+    else:
+        st.header("Fiszki bez zestawu")
+        if st.button("➕ Dodaj fiszkę"):
+            st.session_state.active_page = "Dodaj fiszkę"
+            st.rerun()
+        fiszki = fiszki_df[
+            ((fiszki_df["id_zestawu"].isna()) | (fiszki_df["id_zestawu"] == "")) &
+            (fiszki_df["id_profilu"] == st.session_state.selected_profile_id)
+        ]
+
+    # Wyświetlanie w razie braku fiszek
+    st.markdown("---")
+    if fiszki.empty:
+        st.write("Brak fiszek.")
+    else:
+        for _, row in fiszki.iterrows():
+            if st.button(f"{row['przod']}", key=f"fiszka_{row['id']}"):
+                st.session_state.edit_card_id = row["id"]
+                st.session_state.active_page = "Edytuj fiszkę" # albo zrobić osobno Edytuj i Dodaj, albo jakoś połączyć
+                st.rerun()
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Strona dodawania zestawów
+elif st.session_state.active_page == "Dodaj zestaw":
+
+    if st.button("← Powrót do zestawów"):
+        st.session_state.active_page = "Zestawy"
+        st.rerun()
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Strona dodawania fiszek
+elif st.session_state.active_page == "Dodaj fiszkę":
+
+    if st.button("← Powrót do fiszek"):
+        st.session_state.active_page = "Fiszki"
+        st.rerun()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Strona profilu
