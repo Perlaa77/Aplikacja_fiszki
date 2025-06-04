@@ -1,15 +1,89 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Podstawowa konfiguracja strony
 st.set_page_config(
     page_title="Fistaszki",
     page_icon="",
     layout="wide"
 )
-st.title('Fistaszki')
+st.markdown('<div class="gradient-text">Fistaszki</div>', unsafe_allow_html=True)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Style
+st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@350&family=EB+Garamond:ital@0;1&family=Lexend+Giga:wght@100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
+st.markdown("""
+<style>
+    /* Główna czcionka */
+    html, body, .stApp {
+        font-family: "EB Garamond", !important;
+        font-weight: 700 !important;   
+    }
+    
+    /* Wycentrowanie tekstu i dzieci w głównym kontenerze */
+        [data-testid="stAppViewContainer"] {
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            height: 100vh !important;
+            text-align: center !important;
+        }
+            
+        body, div, p, span, input, button, textarea {
+        font-family: 'Lexend Giga', sans-serif !important;
+        font-weight: 200 !important;
+    }
+
+        .gradient-text {
+        font-family: 'Lexend Giga', sans-serif;
+        font-size: 64px;
+        font-weight: 350;
+        text-align: center;
+        background: linear-gradient(90deg, #FFCCE5 0%, #FFCCE5 15%, #cc0066 80%, #cc0066 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0px 0 20px 0;
+    }
+    
+    /* Standardowe nagłówki */
+            
+    h2, h3 {
+        font-family: 'Lexend Giga' !important;
+        font-weight: 100 !important;
+        font-style: normal;
+    }
+            
+    /* Ogólny styl wszystkich przycisków */
+    div.stButton > button {
+        background-color: #FDC2DE;
+        color: white;
+        font-family: 'Lexend Giga' !important;
+        font-weight: 100 !important;
+        border: none;
+        padding: 0.6em 1.2em;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Hover efekt */
+    div.stButton > button:hover {
+        background-color: #FDB8D8;
+        transform: scale(1.05);
+        color: white !important;
+    }
+
+    /* Styl aktywnego przycisku */
+    div.stButton > button.active-button {
+        background: linear-gradient(90deg, #8a5a44, #ffb347);
+        font-weight: bold;
+        color: white !important; 
+    }
+
+</style>
+""", unsafe_allow_html=True)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Podstawowa konfiguracja strony
 
 # Wczytanie danych z CSV
 profile_df = pd.read_csv("data/profile.csv", sep=";")
@@ -23,9 +97,18 @@ if "selected_profile_id" not in st.session_state:
     st.session_state.selected_profile_id = None
 
 # Pasek nawigacyjny
-if st.session_state.active_page not in ["Sesja nauki", "Fiszki", "Dodaj zestaw", "Dodaj fiszkę"]:
-    page = st.sidebar.radio('', ['Strona główna','Ucz się','Zestawy i fiszki','Profil'])
-    st.session_state.active_page = page
+st.markdown("---")
+pages = ['Strona główna', 'Ucz się', 'Zestawy i fiszki', 'Profil']
+clicked = None
+
+cols = st.columns(len(pages), gap="small")
+for i, page in enumerate(pages):
+    with cols[i]:
+        if st.button(page, key=f"nav_{i}"):
+            st.session_state.active_page = page
+
+st.markdown("---")
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Strona główna
@@ -53,10 +136,8 @@ elif st.session_state.active_page == "Ucz się":
         st.stop()
 
     st.subheader("Konfiguracja sesji nauki")
-    
     # Wybór trybu nauki
     study_mode = st.radio("Wybierz tryb nauki:", ['Klasyczny', 'Test'])
-
     # Opcje dodatkowe
     show_timer = st.checkbox("Pokaż licznik czasu")
 
@@ -237,3 +318,4 @@ elif st.session_state.active_page == "Profil":
                 st.session_state.profile_choice = new_nick
                 st.success(f"Profil '{new_nick}' został dodany i wybrany.")
                 st.rerun()
+
