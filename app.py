@@ -161,22 +161,85 @@ elif st.session_state.aktywna_strona == "Ucz się":
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
         st.stop()
 
-    st.header("Konfiguracja sesji nauki")
     # Wybór trybu nauki
-    tryb_nauki = st.radio("Wybierz tryb nauki:", ['Klasyczny', 'Test'])
-    # Opcje dodatkowe
-    czasomierz = st.checkbox("Pokaż licznik czasu")
+    tryb_opis = {
+        "Klasyczny": "Kliknij na fiszkę, by zobaczyć jej tył.",
+        "Trening": "Wpisz odpowiedź i sprawdź, czy jest poprawna.",
+        "Test": "Wpisz odpowiedzi dla wszystkich fiszek i sprawdź wynik w podsumowaniu."
+    }
+    tryb_nauki = st.selectbox(
+        "Wybierz tryb nauki:",
+        options=list(tryb_opis.keys()),
+        index=0
+    )
+    st.write(f"{tryb_opis[tryb_nauki]}")
 
-    # Wybór tematów - na razie jako placeholder
-    st.selectbox("Wybierz temat(y):", options=["(Wybór dostępny wkrótce)"], index=0, disabled=True)
+    # Czasomierz
+    czasomierz = st.checkbox("⏱️ Pokaż licznik czasu")
 
-    if st.button("Rozpocznij naukę"):
-        st.session_state.aktywna_strona = "Sesja nauki"
-        st.rerun()
+    st.markdown("---")
+
+    # Wybór zestawów do nauki
+    zestawy_uzytkownika = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+    fiszki_uzytkownika = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+
+    wszystkie_opcje_zestawow = zestawy_uzytkownika["nazwa"].tolist()
+    if not fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == 0].empty:
+        wszystkie_opcje_zestawow.append("Bez zestawu")
+
+    wybrane_zestawy = st.multiselect("Wybierz zestawy do nauki:", options=wszystkie_opcje_zestawow)
+
+    # Wybór konkretnych fiszek do nauki
+    fiszki_do_wyboru = pd.DataFrame()
+    if wybrane_zestawy:
+        fiszki_z_wybranych = pd.DataFrame()
+        for nazwa in wybrane_zestawy:
+            if nazwa == "Bez zestawu":
+                temp = fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == 0]
+            else:
+                id_zestawu = zestawy_uzytkownika[zestawy_uzytkownika["nazwa"] == nazwa]["id"].values[0]
+                temp = fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == id_zestawu]
+            fiszki_z_wybranych = pd.concat([fiszki_z_wybranych, temp], ignore_index=True)
+        if not fiszki_z_wybranych.empty:
+            fiszki_z_wybranych["etykieta"] = fiszki_z_wybranych["przod"] + " ➝ " + fiszki_z_wybranych["tyl"]
+            wybrane_fiszki = st.multiselect(
+                "(Opcjonalnie) wybierz konkretne fiszki do nauki:",
+                options=fiszki_z_wybranych["etykieta"].tolist()
+            )
+            fiszki_do_wyboru = fiszki_z_wybranych[fiszki_z_wybranych["etykieta"].isin(wybrane_fiszki)]
+        else:
+            st.info("Brak fiszek w wybranych zestawach.")
+    else:
+        st.info("Wybierz co najmniej jeden zestaw, aby zobaczyć fiszki.")
+
+    st.markdown("---")
+
+    # Rozpoczęcie nauki
+    if st.button("Rozpocznij sesję"):
+        if wybrane_zestawy and (not fiszki_z_wybranych.empty):
+            st.session_state.tryb_nauki = tryb_nauki
+            st.session_state.czasomierz = czasomierz
+            if not fiszki_do_wyboru.empty:
+                st.session_state.fiszki_do_nauki = fiszki_do_wyboru.to_dict(orient="records")
+            else:
+                st.session_state.fiszki_do_nauki = fiszki_z_wybranych.to_dict(orient="records")
+
+            st.session_state.aktywna_strona = "Sesja nauki"
+            st.rerun()
+        else:
+            st.info("Musisz wybrać co najmniej jeden zestaw zawierający fiszki.")
 
 ########################################################################################################################################
 # Strona nauki
 elif st.session_state.aktywna_strona == "Sesja nauki":
+
+    if st.button("Wyjdź z sesji"):
+        st.session_state.aktywna_strona = "Ucz się"
+        st.rerun()
+
+########################################################################################################################################
+# Strona podsumowania sesji nauki
+elif st.session_state.aktywna_strona == "Podsumowanie sesji":
 
     if st.button("← Powrót do konfiguracji"):
         st.session_state.aktywna_strona = "Ucz się"
@@ -222,7 +285,7 @@ elif st.session_state.aktywna_strona == "Fiszki":
     st.markdown("---")
     unassigned = fiszki_df[
         (fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu) &
-        (fiszki_df["id_zestawu"].isna())
+        (fiszki_df["id_zestawu"] == 0)
     ]
     if not unassigned.empty:
         if st.button("Fiszki bez zestawu"):
@@ -260,8 +323,7 @@ elif st.session_state.aktywna_strona == "Fiszki w zestawie":
             st.session_state.aktywna_strona = "Dodaj fiszkę"
             st.rerun()
         fiszki = fiszki_df[
-            ((fiszki_df["id_zestawu"].isna()) | (fiszki_df["id_zestawu"] == "")) &
-            (fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu)
+            (fiszki_df["id_zestawu"] == 0) & (fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu)
         ]
 
     # Wyświetlanie w razie braku fiszek
@@ -385,7 +447,7 @@ elif st.session_state.aktywna_strona == "Dodaj fiszkę":
                 st.info("Uzupełnij wymagane pola: przód i tył.")
             else:
                 if wybrany_zestaw == "Brak zestawu":
-                    id_zestawu = np.nan
+                    id_zestawu = 0
                 else:
                     id_zestawu = zestawy_uzytkownika[zestawy_uzytkownika["nazwa"] == wybrany_zestaw]["id"].values[0]
 
@@ -455,6 +517,12 @@ elif st.session_state.aktywna_strona == "Profil":
 
         if st.button("Zarejestruj się"):
             st.session_state.aktywna_strona = "Rejestracja"
+            st.rerun()
+    elif st.session_state.zalogowany:
+        if st.button("Wyloguj się"):
+            st.session_state.zalogowany = False
+            st.session_state.id_aktywnego_profilu = None
+            st.success("Wylogowano pomyślnie.")
             st.rerun()
 
 ########################################################################################################################################
