@@ -18,6 +18,7 @@ st.markdown("""
     html, body, .stApp {
         font-family: "EB Garamond", !important;
         font-weight: 700 !important;   
+            background-color: #764467 !important;
     }
     
     /* Wycentrowanie tekstu i dzieci w głównym kontenerze */
@@ -56,7 +57,7 @@ st.markdown("""
     /* Ogólny styl wszystkich przycisków */
     div.stButton > button {
         background-color: #FDC2DE;
-        color: white;
+        color: #1E0216;
         font-family: 'Lexend Giga' !important;
         font-weight: 100 !important;
         border: none;
@@ -276,46 +277,32 @@ elif st.session_state.active_page == "Dodaj fiszkę":
 elif st.session_state.active_page == "Profil":
     st.header("Profil")
 
-    # Zalogowany jako
-    if st.session_state.selected_profile_id is not None:
-        nick = profile_df.loc[profile_df["id"] == st.session_state.selected_profile_id, "nick"].values[0]
-    else:
-        nick = "Gość"
-    st.write(f"**Zalogowany jako:** {nick}")
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "selected_profile_id" not in st.session_state:
+    st.session_state.selected_profile_id = None
 
-    # Wybór profilu
-    options = ["Gość"] + profile_df["nick"].tolist() + ["Dodaj nowy"]
-    if "profile_choice" not in st.session_state:
-        st.session_state.profile_choice = nick
-    choice = st.radio("Wybierz profil:", options, index=options.index(st.session_state.profile_choice))
+profile_df = pd.read_csv("data/profile.csv", sep=";")
 
-    # Przełączanie profilu
-    if choice != st.session_state.profile_choice:
-        st.session_state.profile_choice = choice
-        if choice == "Gość":
-            st.session_state.selected_profile_id = None
-            st.rerun()
-        elif choice != "Dodaj nowy":
-            profile_id = profile_df.loc[profile_df["nick"] == choice, "id"].values[0]
-            st.session_state.selected_profile_id = profile_id
-            st.rerun()
+if not st.session_state.logged_in:
+    st.subheader("🔐 Zaloguj się")
 
-    # Dodawanie nowego profilu
-    if choice == "Dodaj nowy":
-        new_nick = st.text_input("Podaj nazwę nowego profilu:")
-        if st.button("Zatwierdź nowy profil"):
-            if new_nick.strip() == "":
-                st.error("Nazwa profilu nie może być pusta!")
-            elif new_nick in profile_df["nick"].values:
-                st.error("Profil o takiej nazwie już istnieje!")
-            else:
-                new_id = profile_df["id"].max() + 1 if not profile_df.empty else 1
-                new_row = pd.DataFrame([{"id": new_id, "nick": new_nick}])
-                profile_df = pd.concat([profile_df, new_row], ignore_index=True)
-                profile_df.to_csv("data/profile.csv", sep=";", index=False)
+    login_nick = st.text_input("Login (nick)")
+    login_password = st.text_input("Hasło", type="password")
 
-                st.session_state.selected_profile_id = new_id
-                st.session_state.profile_choice = new_nick
-                st.success(f"Profil '{new_nick}' został dodany i wybrany.")
+    if st.button("Zaloguj"):
+        user = profile_df[profile_df["nick"] == login_nick]
+        if not user.empty:
+            stored_hash = user["haslo"].values[0]
+            if stored_hash == login_password:
+                st.session_state.logged_in = True
+                st.session_state.selected_profile_id = user["id"].values[0]
+                st.success("Zalogowano pomyślnie.")
                 st.rerun()
+            else:
+                st.error("Nieprawidłowe hasło.")
+        else:
+            st.error("Nie znaleziono użytkownika.")
+
+    st.stop()
 

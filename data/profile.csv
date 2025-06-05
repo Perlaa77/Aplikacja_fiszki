@@ -1,5 +1,5 @@
-id;nick
-1;Lilo
-2;Jacek
-3;Alicja
-4;Kokos
+id;nick;haslo
+1;Lilo;lilo
+2;Jacek;jacek
+3;Alicja;alicja
+4;Kokos;kokos
