@@ -1,14 +1,18 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+
+########################################################################################################################################
+# Podstawowa konfiguracja strony
 st.set_page_config(
     page_title="Fistaszki",
     page_icon="",
     layout="wide"
 )
-st.markdown('<div class="gradient-text">Fistaszki</div>', unsafe_allow_html=True)
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+########################################################################################################################################
 # Style
+st.markdown('<div class="gradient-text">Fistaszki</div>', unsafe_allow_html=True)
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@350&family=EB+Garamond:ital@0;1&family=Lexend+Giga:wght@100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 """, unsafe_allow_html=True)
@@ -98,8 +102,9 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Podstawowa konfiguracja strony
+
+########################################################################################################################################
+# Konfiguracja i pobranie danych z bazy
 
 # Wczytanie danych z CSV
 profile_df = pd.read_csv("data/profile.csv", sep=";")
@@ -135,8 +140,7 @@ with col4:
 
 st.markdown("---")
 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona główna
 if st.session_state.active_page == "Strona główna":
     
@@ -151,7 +155,7 @@ if st.session_state.active_page == "Strona główna":
     if st.session_state.selected_profile_id is None:
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona konfiguracji nauki
 elif st.session_state.active_page == "Ucz się":
     st.header('Ucz się!')
@@ -174,7 +178,7 @@ elif st.session_state.active_page == "Ucz się":
         st.session_state.active_page = "Sesja nauki"
         st.rerun()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona nauki
 elif st.session_state.active_page == "Sesja nauki":
 
@@ -182,7 +186,7 @@ elif st.session_state.active_page == "Sesja nauki":
         st.session_state.active_page = "Ucz się"
         st.rerun()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona zarządzania zestawami
 elif st.session_state.active_page == "Fiszki":
     st.header("Fiszki")
@@ -233,7 +237,7 @@ elif st.session_state.active_page == "Fiszki":
     else:
         st.write("Brak fiszek bez zestawu.")
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona zarządzania fiszkami w konkretnym zestawie
 elif st.session_state.active_page == "Fiszki":
 
@@ -281,7 +285,7 @@ elif st.session_state.active_page == "Fiszki":
                 st.session_state.active_page = "Edytuj fiszkę" # albo zrobić osobno Edytuj i Dodaj, albo jakoś połączyć
                 st.rerun()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona dodawania zestawów
 elif st.session_state.active_page == "Dodaj zestaw":
 
@@ -289,7 +293,7 @@ elif st.session_state.active_page == "Dodaj zestaw":
         st.session_state.active_page = "Zestawy"
         st.rerun()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona dodawania fiszek
 elif st.session_state.active_page == "Dodaj fiszkę":
 
@@ -297,70 +301,69 @@ elif st.session_state.active_page == "Dodaj fiszkę":
         st.session_state.active_page = "Fiszki"
         st.rerun()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona profilu
 elif st.session_state.active_page == "Profil":
     st.header("Profil")
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "selected_profile_id" not in st.session_state:
-    st.session_state.selected_profile_id = None
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+    if "selected_profile_id" not in st.session_state:
+        st.session_state.selected_profile_id = None
 
-profile_df = pd.read_csv("data/profile.csv", sep=";")
+    profile_df = pd.read_csv("data/profile.csv", sep=";")
 
-if not st.session_state.logged_in:
-    st.subheader("🔐 Zaloguj się")
+    if not st.session_state.logged_in:
+        st.subheader("🔐 Zaloguj się")
 
-    login_nick = st.text_input("Login (nick)")
-    login_password = st.text_input("Hasło", type="password")
+        login_nick = st.text_input("Login (nick)")
+        login_password = st.text_input("Hasło", type="password")
 
-    if st.button("Zaloguj"):
-        user = profile_df[profile_df["nick"] == login_nick]
-        if not user.empty:
-            stored_hash = user["haslo"].values[0]
-            if stored_hash == login_password:
-                st.session_state.logged_in = True
-                st.session_state.selected_profile_id = user["id"].values[0]
-                st.success("Zalogowano pomyślnie.")
-                st.rerun()
+        if st.button("Zaloguj"):
+            user = profile_df[profile_df["nick"] == login_nick]
+            if not user.empty:
+                stored_hash = user["haslo"].values[0]
+                if stored_hash == login_password:
+                    st.session_state.logged_in = True
+                    st.session_state.selected_profile_id = user["id"].values[0]
+                    st.success("Zalogowano pomyślnie.")
+                    st.rerun()
+                else:
+                    st.error("Nieprawidłowe hasło.")
             else:
-                st.error("Nieprawidłowe hasło.")
-        else:
-            st.error("Nie znaleziono użytkownika.")
+                st.error("Nie znaleziono użytkownika.")
 
-    if st.button("Zarejestruj się"):
-        st.session_state.active_page = "Rejestracja"
-        st.rerun()
+        if st.button("Zarejestruj się"):
+            st.session_state.active_page = "Rejestracja"
+            st.rerun()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Strona rejestracji
 if st.session_state.active_page == "Rejestracja":
     st.header("Rejestracja")
-with st.form("registration_form"):
-    new_nick = st.text_input("Nazwa użytkownika")
-    new_password = st.text_input("Hasło", type="password")
-    confirm_password = st.text_input("Potwierdź hasło", type="password")
-    submitted = st.form_submit_button("Zarejestruj")
+    with st.form("registration_form"):
+        new_nick = st.text_input("Nazwa użytkownika")
+        new_password = st.text_input("Hasło", type="password")
+        confirm_password = st.text_input("Potwierdź hasło", type="password")
+        submitted = st.form_submit_button("Zarejestruj")
 
-    if submitted:
-        # Walidacja
-        if new_nick.strip() == "" or new_password.strip() == "":
-            st.error("Nazwa użytkownika i hasło są wymagane.")
-        elif new_nick in profile_df["nick"].values:
-            st.error("Taki użytkownik już istnieje.")
-        elif new_password != confirm_password:
-            st.error("Hasła nie są zgodne.")
-        else:
-            # Dodaj nowego użytkownika
-            new_id = profile_df["id"].max() + 1 if not profile_df.empty else 1
-            new_row = pd.DataFrame([{
-                "id": new_id,
-                "nick": new_nick,
-                "haslo": new_password
-            }])
-            profile_df = pd.concat([profile_df, new_row], ignore_index=True)
-            profile_df.to_csv("data/profile.csv", sep=";", index=False)
+        if submitted:
+            # Walidacja
+            if new_nick.strip() == "" or new_password.strip() == "":
+                st.error("Nazwa użytkownika i hasło są wymagane.")
+            elif new_nick in profile_df["nick"].values:
+                st.error("Taki użytkownik już istnieje.")
+            elif new_password != confirm_password:
+                st.error("Hasła nie są zgodne.")
+            else:
+                # Dodaj nowego użytkownika
+                new_id = profile_df["id"].max() + 1 if not profile_df.empty else 1
+                new_row = pd.DataFrame([{
+                    "id": new_id,
+                    "nick": new_nick,
+                    "haslo": new_password
+                }])
+                profile_df = pd.concat([profile_df, new_row], ignore_index=True)
+                profile_df.to_csv("data/profile.csv", sep=";", index=False)
 
-            st.success("Rejestracja zakończona pomyślnie. Możesz się teraz zalogować.")
-st.stop()
+                st.success("Rejestracja zakończona pomyślnie. Możesz się teraz zalogować.")
