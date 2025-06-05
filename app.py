@@ -18,7 +18,7 @@ st.markdown("""
     html, body, .stApp {
         font-family: "EB Garamond", !important;
         font-weight: 700 !important;   
-            background-color: #764467 !important;
+            background-color: #FAD1D6 !important;
     }
     
     /* Wycentrowanie tekstu i dzieci w głównym kontenerze */
@@ -28,6 +28,7 @@ st.markdown("""
             align-items: center !important;
             height: 100vh !important;
             text-align: center !important;
+            text-color: black !important;
         }
             
         body, div, p, span, input, button, textarea {
@@ -40,7 +41,7 @@ st.markdown("""
         font-size: 64px;
         font-weight: 350;
         text-align: center;
-        background: linear-gradient(90deg, #FFCCE5 0%, #FFCCE5 15%, #cc0066 80%, #cc0066 100%);
+        background: linear-gradient(90deg, #FFCCE5 5%, #cc0066 80%, #cc0066 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0px 0 20px 0;
@@ -56,8 +57,8 @@ st.markdown("""
             
     /* Ogólny styl wszystkich przycisków */
     div.stButton > button {
-        background-color: #FDC2DE;
-        color: #1E0216;
+        background-color: #C34E88;
+        color: white;
         font-family: 'Lexend Giga' !important;
         font-weight: 100 !important;
         border: none;
@@ -69,7 +70,7 @@ st.markdown("""
 
     /* Hover efekt */
     div.stButton > button:hover {
-        background-color: #FDB8D8;
+        background-color: #BA015E;
         transform: scale(1.05);
         color: white !important;
     }
@@ -81,6 +82,20 @@ st.markdown("""
         color: white !important; 
     }
 
+    /* Responsywny układ przycisków nawigacyjnych */
+    @media (max-width: 768px) {
+        /* Kontener na przyciski w układzie 2x2 */
+        [data-testid="column"] {
+            min-width: 50% !important;
+            flex: 0 1 50% !important;
+        }
+        
+        /* Styl przycisków na mobile */
+        .stButton>button {
+            width: 90% !important;
+            margin: 5px auto !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -99,14 +114,24 @@ if "selected_profile_id" not in st.session_state:
 
 # Pasek nawigacyjny
 st.markdown("---")
-pages = ['Strona główna', 'Ucz się', 'Zestawy i fiszki', 'Profil']
+pages = ['Start', 'Ucz się', 'Fiszki', 'Profil']
 clicked = None
 
-cols = st.columns(len(pages), gap="small")
-for i, page in enumerate(pages):
-    with cols[i]:
-        if st.button(page, key=f"nav_{i}"):
-            st.session_state.active_page = page
+col1, col2 = st.columns(2)
+col3, col4 = st.columns(2)
+
+with col1:
+    if st.button(pages[0]):
+        st.session_state.active_page = pages[0]
+with col2:
+    if st.button(pages[1]):
+        st.session_state.active_page = pages[1]
+with col3:
+    if st.button(pages[2]):
+        st.session_state.active_page = pages[2]
+with col4:
+    if st.button(pages[3]):
+        st.session_state.active_page = pages[3]
 
 st.markdown("---")
 
@@ -159,8 +184,8 @@ elif st.session_state.active_page == "Sesja nauki":
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Strona zarządzania zestawami
-elif st.session_state.active_page == "Zestawy i fiszki":
-    st.header("Zestawy i fiszki")
+elif st.session_state.active_page == "Fiszki":
+    st.header("Fiszki")
 
     # Informacja jeśli nie wybrano profilu
     if st.session_state.selected_profile_id is None:
@@ -214,7 +239,7 @@ elif st.session_state.active_page == "Fiszki":
 
     # Przycisk powrotu
     if st.button("← Powrót do zestawów"):
-        st.session_state.active_page = "Zestawy i fiszki"
+        st.session_state.active_page = "Fiszki"
         st.rerun()
 
     # Wyświetlanie fiszek w zestawie
@@ -304,5 +329,38 @@ if not st.session_state.logged_in:
         else:
             st.error("Nie znaleziono użytkownika.")
 
-    st.stop()
+    if st.button("Zarejestruj się"):
+        st.session_state.active_page = "Rejestracja"
+        st.rerun()
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Strona rejestracji
+if st.session_state.active_page == "Rejestracja":
+    st.header("Rejestracja")
+with st.form("registration_form"):
+    new_nick = st.text_input("Nazwa użytkownika")
+    new_password = st.text_input("Hasło", type="password")
+    confirm_password = st.text_input("Potwierdź hasło", type="password")
+    submitted = st.form_submit_button("Zarejestruj")
+
+    if submitted:
+        # Walidacja
+        if new_nick.strip() == "" or new_password.strip() == "":
+            st.error("Nazwa użytkownika i hasło są wymagane.")
+        elif new_nick in profile_df["nick"].values:
+            st.error("Taki użytkownik już istnieje.")
+        elif new_password != confirm_password:
+            st.error("Hasła nie są zgodne.")
+        else:
+            # Dodaj nowego użytkownika
+            new_id = profile_df["id"].max() + 1 if not profile_df.empty else 1
+            new_row = pd.DataFrame([{
+                "id": new_id,
+                "nick": new_nick,
+                "haslo": new_password
+            }])
+            profile_df = pd.concat([profile_df, new_row], ignore_index=True)
+            profile_df.to_csv("data/profile.csv", sep=";", index=False)
+
+            st.success("Rejestracja zakończona pomyślnie. Możesz się teraz zalogować.")
+st.stop()
