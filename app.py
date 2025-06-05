@@ -60,7 +60,8 @@ st.markdown("""
     }
             
     /* Ogólny styl wszystkich przycisków */
-    div.stButton > button {
+    div.stButton > button,
+    div.stForm button {
         background-color: #C34E88;
         color: white;
         font-family: 'Lexend Giga' !important;
@@ -142,7 +143,7 @@ st.markdown("---")
 
 ########################################################################################################################################
 # Strona główna
-if st.session_state.active_page == "Strona główna":
+if st.session_state.active_page == "Start":
     
     # Powitanie
     if st.session_state.selected_profile_id is not None:
@@ -158,14 +159,13 @@ if st.session_state.active_page == "Strona główna":
 ########################################################################################################################################
 # Strona konfiguracji nauki
 elif st.session_state.active_page == "Ucz się":
-    st.header('Ucz się!')
 
     # Informacja jeśli nie wybrano profilu
     if st.session_state.selected_profile_id is None:
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
         st.stop()
 
-    st.subheader("Konfiguracja sesji nauki")
+    st.header("Konfiguracja sesji nauki")
     # Wybór trybu nauki
     study_mode = st.radio("Wybierz tryb nauki:", ['Klasyczny', 'Test'])
     # Opcje dodatkowe
@@ -189,7 +189,6 @@ elif st.session_state.active_page == "Sesja nauki":
 ########################################################################################################################################
 # Strona zarządzania zestawami
 elif st.session_state.active_page == "Fiszki":
-    st.header("Fiszki")
 
     # Informacja jeśli nie wybrano profilu
     if st.session_state.selected_profile_id is None:
@@ -210,21 +209,20 @@ elif st.session_state.active_page == "Fiszki":
 
     # Zestawy danego profilu
     st.markdown("---")
-    st.subheader("Twoje zestawy:")
+    st.header("Twoje zestawy:")
     profile_id = st.session_state.selected_profile_id
     user_sets = zestawy_df[zestawy_df["id_profilu"] == profile_id]
     if not user_sets.empty:
         for _, row in user_sets.iterrows():
             if st.button(row["nazwa"], key=f"zestaw_{row['id']}"):
                 st.session_state.manage_set_id = row["id"]
-                st.session_state.active_page = "Fiszki"
+                st.session_state.active_page = "Fiszki w zestawie"
                 st.rerun()
     else:
         st.write("Brak zestawów.")
 
     # Fiszki bez przypisanego zestawu
     st.markdown("---")
-    st.subheader("Fiszki bez zestawu:")
     unassigned = fiszki_df[
         (fiszki_df["id_profilu"] == profile_id) &
         (fiszki_df["id_zestawu"].isna())
@@ -232,19 +230,14 @@ elif st.session_state.active_page == "Fiszki":
     if not unassigned.empty:
         if st.button("Fiszki bez zestawu"):
             st.session_state.manage_set_id = None
-            st.session_state.active_page = "Fiszki"
+            st.session_state.active_page = "Fiszki w zestawie"
             st.rerun()
     else:
         st.write("Brak fiszek bez zestawu.")
 
 ########################################################################################################################################
 # Strona zarządzania fiszkami w konkretnym zestawie
-elif st.session_state.active_page == "Fiszki":
-
-    # Przycisk powrotu
-    if st.button("← Powrót do zestawów"):
-        st.session_state.active_page = "Fiszki"
-        st.rerun()
+elif st.session_state.active_page == "Fiszki w zestawie":
 
     # Wyświetlanie fiszek w zestawie
     if st.session_state.manage_set_id is not None:
@@ -296,10 +289,66 @@ elif st.session_state.active_page == "Dodaj zestaw":
 ########################################################################################################################################
 # Strona dodawania fiszek
 elif st.session_state.active_page == "Dodaj fiszkę":
+    st.header("Dodaj nową fiszkę")
 
-    if st.button("← Powrót do fiszek"):
-        st.session_state.active_page = "Fiszki"
+    # Przycisk powrotu
+    if st.button("← Powrót"):
+        st.session_state.active_page = "Fiszki w zestawie"
         st.rerun()
+
+    profile_id = st.session_state.selected_profile_id
+
+    # Wybór zestawu
+    zestawy_uzytkownika = zestawy_df[zestawy_df["id_profilu"] == profile_id]
+    opcje_zestawow = ["Brak zestawu"] + zestawy_uzytkownika["nazwa"].tolist()
+    default_set_name = "Brak zestawu"
+    if st.session_state.get("manage_set_id") is not None:
+        set_id = st.session_state["manage_set_id"]
+        set_row = zestawy_uzytkownika[zestawy_uzytkownika["id"] == set_id]
+        if not set_row.empty:
+            default_set_name = set_row["nazwa"].values[0]
+
+    # Formularz dodawania fiszki
+    with st.form("add_flashcard_form"):
+        przod = st.text_input("Przód (wymagane)")
+        podpowiedz = st.text_input("Podpowiedź (opcjonalna)")
+        tyl = st.text_input("Tył (wymagany)")
+        rozwiniecie = st.text_area("Wyjaśnienie (opcjonalne)")
+        wybrany_zestaw = st.selectbox("Zestaw", opcje_zestawow, index=opcje_zestawow.index(default_set_name))
+
+        submitted = st.form_submit_button("Zapisz fiszkę", use_container_width=False)
+        if submitted:
+            if przod.strip() == "" or tyl.strip() == "":
+                st.info("Uzupełnij wymagane pola: przód i tył.")
+            else:
+                # Nadaj ID fiszce
+                new_id = fiszki_df["id"].max() + 1 if not fiszki_df.empty else 1
+
+                # DOdaj ID zestawu
+                if wybrany_zestaw == "Brak zestawu":
+                    id_zestawu = np.nan
+                else:
+                    id_zestawu = zestawy_uzytkownika[zestawy_uzytkownika["nazwa"] == wybrany_zestaw]["id"].values[0]
+
+                # Nowa fiszka
+                nowa_fiszka = pd.DataFrame([{
+                    "id": new_id,
+                    "przod": przod,
+                    "podpowiedz": podpowiedz,
+                    "tyl": tyl,
+                    "rozwiniecie": rozwiniecie,
+                    "id_profilu": profile_id,
+                    "id_zestawu": id_zestawu
+                }])
+
+                # Zapis nowej fiszki
+                fiszki_df = pd.concat([fiszki_df, nowa_fiszka], ignore_index=True)
+                fiszki_df.to_csv("data/fiszki.csv", sep=";", index=False)
+                st.success("Fiszka została zapisana.")
+
+                # Powrót do listy fiszek
+                st.session_state.active_page = "Fiszki w zestawie"
+                st.rerun()
 
 ########################################################################################################################################
 # Strona profilu
@@ -310,8 +359,6 @@ elif st.session_state.active_page == "Profil":
         st.session_state.logged_in = False
     if "selected_profile_id" not in st.session_state:
         st.session_state.selected_profile_id = None
-
-    profile_df = pd.read_csv("data/profile.csv", sep=";")
 
     if not st.session_state.logged_in:
         st.subheader("🔐 Zaloguj się")
@@ -337,7 +384,7 @@ elif st.session_state.active_page == "Profil":
             st.session_state.active_page = "Rejestracja"
             st.rerun()
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+########################################################################################################################################
 # Strona rejestracji
 if st.session_state.active_page == "Rejestracja":
     st.header("Rejestracja")
