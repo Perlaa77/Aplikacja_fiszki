@@ -1,8 +1,11 @@
 id;przod;podpowiedz;tyl;rozwiniecie;id_profilu;id_zestawu
-1;cat;zwierzę;kot;Domowy pupil;1;2
-2;dog;zwierzę;pies;Wierny przyjaciel człowieka;1;2
-3;mouse;małe zwierzę;mysz;Często w bajkach i laboratoriach;1;2
-4;hello;powitanie;witaj;Typowe angielskie przywitanie;1;1
-5;goodbye;pożegnanie;do widzenia;Standardowe angielskie pożegnanie;1;1
-6;siła;wielkość fizyczna;force;Działa na ciało i zmienia jego ruch;2;3
-7;energia;pojęcie fizyczne;energy;Zdolność do wykonania pracy;2;3
+1;cat;mały lew;kot;Przyjaciel introwertyków;1;2
+2;dog;najepszy przyjaciel człowieka;pies;Czworonożny cudowny pupil;1;2
+3;mouse;Jerry;mysz;Małe słodkie, ale ludzie się boją;1;2
+4;Wynik dodawania;s;Suma;+;2;3
+5;Wynik odejmowania;r;Różnica;-;2;3
+6;Bordowy to odcień ...;c;Czerwonego;Bordowy to ciemny odcień czerwonego;3;5
+7;Granat to odcień ...;kolor;Niebieskiego;Granat to ciemny odcień niebieskiego;3;5
+8;Rysunek;Czym można go narysować?;Ołówek, kredki, tusz, marker, pastele, ...;Plus parę innych;3;6
+9;Rodzaje farb;Czym można namalować obraz?;Olejna, akrylowa, akwarelowa, ...;Plus parę innych;3;6
+10;Kokos;???;KOKOS!;Poprawna odpowiedź;4;7
