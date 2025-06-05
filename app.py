@@ -113,88 +113,81 @@ zestawy_df = pd.read_csv("data/zestawy.csv", sep=";")
 fiszki_df = pd.read_csv("data/fiszki.csv", sep=";")
 
 # Stan aplikacji (aktywna strona oraz profil)
-if "active_page" not in st.session_state:
-    st.session_state.active_page = "Start"
-if "selected_profile_id" not in st.session_state:
-    st.session_state.selected_profile_id = None
+if "aktywna_strona" not in st.session_state:
+    st.session_state.aktywna_strona = "Start"
+if "id_aktywnego_profilu" not in st.session_state:
+    st.session_state.id_aktywnego_profilu = None
 
-# Sprawdzenie profilu
-profile_id = st.session_state.selected_profile_id
+st.markdown("---")
 
 # Pasek nawigacyjny
-st.markdown("---")
-pages = ['Start', 'Ucz się', 'Fiszki', 'Profil']
-clicked = None
-
-col1, col2 = st.columns(2)
-col3, col4 = st.columns(2)
-
+col1, col2, col3, col4 = st.columns(4)
 with col1:
-    if st.button(pages[0]):
-        st.session_state.active_page = pages[0]
+    if st.button("Start"):
+        st.session_state.aktywna_strona = "Start"
 with col2:
-    if st.button(pages[1]):
-        st.session_state.active_page = pages[1]
+    if st.button("Ucz się"):
+        st.session_state.aktywna_strona = "Ucz się"
 with col3:
-    if st.button(pages[2]):
-        st.session_state.active_page = pages[2]
+    if st.button("Fiszki"):
+        st.session_state.aktywna_strona = "Fiszki"
 with col4:
-    if st.button(pages[3]):
-        st.session_state.active_page = pages[3]
+    if st.button("Profil"):
+        st.session_state.aktywna_strona = "Profil"
 
 st.markdown("---")
 
 ########################################################################################################################################
 # Strona główna
-if st.session_state.active_page == "Start":
+if st.session_state.aktywna_strona == "Start":
     
     # Powitanie
-    if st.session_state.selected_profile_id is not None:
-        nick = profile_df.loc[profile_df["id"] == st.session_state.selected_profile_id, "nick"].values[0]
+    if st.session_state.id_aktywnego_profilu is not None:
+        nick = profile_df.loc[profile_df["id"] == st.session_state.id_aktywnego_profilu, "nick"].values[0]
         st.header(f"👋 Cześć, {nick}!")
     else:
         st.header("👋 Cześć!")
 
     # Informacja jeśli nie wybrano profilu
-    if st.session_state.selected_profile_id is None:
+    if st.session_state.id_aktywnego_profilu is None:
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
 
 ########################################################################################################################################
 # Strona konfiguracji nauki
-elif st.session_state.active_page == "Ucz się":
+elif st.session_state.aktywna_strona == "Ucz się":
 
     # Informacja jeśli nie wybrano profilu
-    if st.session_state.selected_profile_id is None:
+    if st.session_state.id_aktywnego_profilu is None:
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
         st.stop()
 
     st.header("Konfiguracja sesji nauki")
     # Wybór trybu nauki
-    study_mode = st.radio("Wybierz tryb nauki:", ['Klasyczny', 'Test'])
+    tryb_nauki = st.radio("Wybierz tryb nauki:", ['Klasyczny', 'Test'])
     # Opcje dodatkowe
-    show_timer = st.checkbox("Pokaż licznik czasu")
+    czasomierz = st.checkbox("Pokaż licznik czasu")
 
     # Wybór tematów - na razie jako placeholder
     st.selectbox("Wybierz temat(y):", options=["(Wybór dostępny wkrótce)"], index=0, disabled=True)
 
     if st.button("Rozpocznij naukę"):
-        st.session_state.active_page = "Sesja nauki"
+        st.session_state.aktywna_strona = "Sesja nauki"
         st.rerun()
 
 ########################################################################################################################################
 # Strona nauki
-elif st.session_state.active_page == "Sesja nauki":
+elif st.session_state.aktywna_strona == "Sesja nauki":
 
     if st.button("← Powrót do konfiguracji"):
-        st.session_state.active_page = "Ucz się"
+        st.session_state.aktywna_strona = "Ucz się"
         st.rerun()
 
 ########################################################################################################################################
 # Strona zarządzania zestawami
-elif st.session_state.active_page == "Fiszki":
+elif st.session_state.aktywna_strona == "Fiszki":
 
     # Informacja jeśli nie wybrano profilu
-    if st.session_state.selected_profile_id is None:
+    if st.session_state.id_aktywnego_profilu is None:
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
         st.stop()
 
@@ -202,26 +195,25 @@ elif st.session_state.active_page == "Fiszki":
     col1, col2 = st.columns(2)
     with col1:
         if st.button("➕ Dodaj nowy zestaw", key="dodaj_zestaw"):
-            st.session_state.manage_set_id = None
-            st.session_state.active_page = "Dodaj zestaw"
+            st.session_state.id_aktywnego_zestawu = None
+            st.session_state.aktywna_strona = "Dodaj zestaw"
             st.rerun()
     with col2:
         if st.button("➕ Dodaj nową fiszkę", key="dodaj_fiszke"):
-            st.session_state.manage_set_id = None
-            st.session_state.edit_card_id = None
-            st.session_state.active_page = "Dodaj fiszkę"
+            st.session_state.id_aktywnego_zestawu = None
+            st.session_state.id_aktywnej_fiszki = None
+            st.session_state.aktywna_strona = "Dodaj fiszkę"
             st.rerun()
 
     # Zestawy danego profilu
     st.markdown("---")
     st.header("Twoje zestawy:")
-    profile_id = st.session_state.selected_profile_id
-    user_sets = zestawy_df[zestawy_df["id_profilu"] == profile_id]
-    if not user_sets.empty:
-        for _, row in user_sets.iterrows():
+    zestawy_profilu = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+    if not zestawy_profilu.empty:
+        for _, row in zestawy_profilu.iterrows():
             if st.button(row["nazwa"], key=f"zestaw_{row['id']}"):
-                st.session_state.manage_set_id = row["id"]
-                st.session_state.active_page = "Fiszki w zestawie"
+                st.session_state.id_aktywnego_zestawu = row["id"]
+                st.session_state.aktywna_strona = "Fiszki w zestawie"
                 st.rerun()
     else:
         st.write("Brak zestawów.")
@@ -229,47 +221,47 @@ elif st.session_state.active_page == "Fiszki":
     # Fiszki bez przypisanego zestawu
     st.markdown("---")
     unassigned = fiszki_df[
-        (fiszki_df["id_profilu"] == profile_id) &
+        (fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu) &
         (fiszki_df["id_zestawu"].isna())
     ]
     if not unassigned.empty:
         if st.button("Fiszki bez zestawu"):
-            st.session_state.manage_set_id = None
-            st.session_state.active_page = "Fiszki w zestawie"
+            st.session_state.id_aktywnego_zestawu = None
+            st.session_state.aktywna_strona = "Fiszki w zestawie"
             st.rerun()
     else:
         st.write("Brak fiszek bez zestawu.")
 
 ########################################################################################################################################
 # Strona zarządzania fiszkami w konkretnym zestawie
-elif st.session_state.active_page == "Fiszki w zestawie":
+elif st.session_state.aktywna_strona == "Fiszki w zestawie":
 
     # Wyświetlanie fiszek w zestawie
-    if st.session_state.manage_set_id is not None:
-        zestaw = zestawy_df[zestawy_df["id"] == st.session_state.manage_set_id].iloc[0]
+    if st.session_state.id_aktywnego_zestawu is not None:
+        zestaw = zestawy_df[zestawy_df["id"] == st.session_state.id_aktywnego_zestawu].iloc[0]
         st.header(f"Zestaw: {zestaw['nazwa']}")
         col1, col2 = st.columns(2)
         with col1:
             if st.button("➕ Dodaj fiszkę"):
-                st.session_state.active_page = "Dodaj fiszkę"
+                st.session_state.aktywna_strona = "Dodaj fiszkę"
                 st.rerun()
         with col2:
             if st.button("✏️ Edytuj zestaw"):
-                st.session_state.active_page = "Dodaj zestaw"
+                st.session_state.aktywna_strona = "Dodaj zestaw"
                 st.rerun()
         fiszki = fiszki_df[
             (fiszki_df["id_zestawu"] == zestaw["id"]) &
-            (fiszki_df["id_profilu"] == st.session_state.selected_profile_id)
+            (fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu)
         ]
     # Wyświetlanie fiszek, które nie mają zestawu
     else:
         st.header("Fiszki bez zestawu")
         if st.button("➕ Dodaj fiszkę"):
-            st.session_state.active_page = "Dodaj fiszkę"
+            st.session_state.aktywna_strona = "Dodaj fiszkę"
             st.rerun()
         fiszki = fiszki_df[
             ((fiszki_df["id_zestawu"].isna()) | (fiszki_df["id_zestawu"] == "")) &
-            (fiszki_df["id_profilu"] == st.session_state.selected_profile_id)
+            (fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu)
         ]
 
     # Wyświetlanie w razie braku fiszek
@@ -279,40 +271,44 @@ elif st.session_state.active_page == "Fiszki w zestawie":
     else:
         for _, row in fiszki.iterrows():
             if st.button(f"{row['przod']}", key=f"fiszka_{row['id']}"):
-                st.session_state.edit_card_id = row["id"]
-                st.session_state.active_page = "Dodaj fiszkę"
+                st.session_state.id_aktywnej_fiszki = row["id"]
+                st.session_state.aktywna_strona = "Dodaj fiszkę"
                 st.rerun()
 
 ########################################################################################################################################
 # Strona dodawania i edycji zestawów
-elif st.session_state.active_page == "Dodaj zestaw":
+elif st.session_state.aktywna_strona == "Dodaj zestaw":
 
     # Sprawdzenie trybu: nowy czy edycja
-    is_edit_mode = False
+    tryb_edycji = False
     zestaw_do_edycji = None
-    if st.session_state.get("manage_set_id") is not None:
-        zestaw_do_edycji = zestawy_df[zestawy_df["id"] == st.session_state.manage_set_id]
+    if st.session_state.get("id_aktywnego_zestawu") is not None:
+        zestaw_do_edycji = zestawy_df[zestawy_df["id"] == st.session_state.id_aktywnego_zestawu]
         if not zestaw_do_edycji.empty:
             zestaw_do_edycji = zestaw_do_edycji.iloc[0]
-            is_edit_mode = True
+            tryb_edycji = True
 
-    st.header("Edytuj zestaw" if is_edit_mode else "Dodaj nowy zestaw")
+    st.header("Edytuj zestaw" if tryb_edycji else "Dodaj nowy zestaw")
     if st.button("← Powrót do zestawów"):
-        st.session_state.active_page = "Fiszki"
+        st.session_state.aktywna_strona = "Fiszki"
         st.rerun()
 
     # Formularz dodawania/edytowania zestawu
-    with st.form("zestaw_formularz"):
-        nazwa = st.text_input("Nazwa zestawu", value=zestaw_do_edycji["nazwa"] if is_edit_mode else "")
-        submitted = st.form_submit_button("Zapisz zestaw")
+    with st.form("add_set_form"):
+        nazwa = st.text_input("Nazwa zestawu", value=zestaw_do_edycji["nazwa"] if tryb_edycji else "")
+        col_zapisz, col_anuluj_usun = st.columns(2)
+        with col_zapisz:
+            submitted = st.form_submit_button("Zapisz zestaw")
+        with col_anuluj_usun:
+            cancelled = st.form_submit_button("Usuń zestaw" if tryb_edycji else "Anuluj")
 
         if submitted:
             if nazwa.strip() == "":
                 st.info("Nazwa zestawu nie może być pusta.")
-            elif (zestawy_df["nazwa"] == nazwa).any() and (not is_edit_mode or nazwa != zestaw_do_edycji["nazwa"]):
+            elif (zestawy_df["nazwa"] == nazwa).any() and (not tryb_edycji or nazwa != zestaw_do_edycji["nazwa"]):
                 st.info("Zestaw o takiej nazwie już istnieje.")
             else:
-                if is_edit_mode:
+                if tryb_edycji:
                     zestawy_df.loc[zestawy_df["id"] == zestaw_do_edycji["id"], "nazwa"] = nazwa
                     st.success("Zestaw został pomyślnie zaktualizowany.")
                 else:
@@ -320,7 +316,7 @@ elif st.session_state.active_page == "Dodaj zestaw":
                     new_row = pd.DataFrame([{
                         "id": new_id,
                         "nazwa": nazwa,
-                        "id_profilu": profile_id
+                        "id_profilu": st.session_state.id_aktywnego_profilu
                     }])
                     zestawy_df = pd.concat([zestawy_df, new_row], ignore_index=True)
                     st.success("Nowy zestaw został pomyślnie dodany.")
@@ -329,49 +325,60 @@ elif st.session_state.active_page == "Dodaj zestaw":
                 zestawy_df.to_csv("data/zestawy.csv", sep=";", index=False)
 
                 # Powrót do przeglądu zestawów
-                st.session_state.active_page = "Fiszki"
+                st.session_state.aktywna_strona = "Fiszki"
                 st.rerun()
+        if cancelled:
+            if tryb_edycji:
+                zestawy_df = zestawy_df[zestawy_df["id"] != zestaw_do_edycji["id"]]
+                zestawy_df.to_csv("data/zestawy.csv", sep=";", index=False)
+                st.success("Zestaw został usunięty.")
+            st.session_state.aktywna_strona = "Fiszki"
+            st.rerun()
 
 ########################################################################################################################################
 # Strona dodawania i edycji fiszek
-elif st.session_state.active_page == "Dodaj fiszkę":
+elif st.session_state.aktywna_strona == "Dodaj fiszkę":
 
     # Sprawdzenie trybu: nowy czy edycja
-    is_edit_mode = False
+    tryb_edycji = False
     edytowana_fiszka = None
-    if st.session_state.get("edit_card_id") is not None:
-        edytowana_fiszka = fiszki_df[fiszki_df["id"] == st.session_state.edit_card_id]
+    if st.session_state.get("id_aktywnej_fiszki") is not None:
+        edytowana_fiszka = fiszki_df[fiszki_df["id"] == st.session_state.id_aktywnej_fiszki]
         if not edytowana_fiszka.empty:
             edytowana_fiszka = edytowana_fiszka.iloc[0]
-            is_edit_mode = True
+            tryb_edycji = True
 
-    st.header("Edytuj fiszkę" if is_edit_mode else "Dodaj nową fiszkę")
+    st.header("Edytuj fiszkę" if tryb_edycji else "Dodaj nową fiszkę")
     if st.button("← Powrót do zestawu"):
-        st.session_state.active_page = "Fiszki w zestawie"
-        st.session_state.edit_card_id = None
+        st.session_state.aktywna_strona = "Fiszki w zestawie"
+        st.session_state.id_aktywnej_fiszki = None
         st.rerun()
 
     # Wybór zestawu
-    zestawy_uzytkownika = zestawy_df[zestawy_df["id_profilu"] == profile_id]
+    zestawy_uzytkownika = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
     opcje_zestawow = ["Brak zestawu"] + zestawy_uzytkownika["nazwa"].tolist()
-    default_set_name = "Brak zestawu"
-    if is_edit_mode and not pd.isna(edytowana_fiszka["id_zestawu"]):
-        zestaw_row = zestawy_uzytkownika[zestawy_uzytkownika["id"] == edytowana_fiszka["id_zestawu"]]
-        if not zestaw_row.empty:
-            default_set_name = zestaw_row["nazwa"].values[0]
-    elif st.session_state.get("manage_set_id") is not None:
-        set_row = zestawy_uzytkownika[zestawy_uzytkownika["id"] == st.session_state["manage_set_id"]]
-        if not set_row.empty:
-            default_set_name = set_row["nazwa"].values[0]
+    domyslna_nazwa_zestawu = "Brak zestawu"
+    if tryb_edycji and not pd.isna(edytowana_fiszka["id_zestawu"]):
+        row_zestaw = zestawy_uzytkownika[zestawy_uzytkownika["id"] == edytowana_fiszka["id_zestawu"]]
+        if not row_zestaw.empty:
+            domyslna_nazwa_zestawu = row_zestaw["nazwa"].values[0]
+    elif st.session_state.get("id_aktywnego_zestawu") is not None:
+        row_zestaw = zestawy_uzytkownika[zestawy_uzytkownika["id"] == st.session_state["id_aktywnego_zestawu"]]
+        if not row_zestaw.empty:
+            domyslna_nazwa_zestawu = row_zestaw["nazwa"].values[0]
 
     # Formularz dodawania/edytowania fiszki
     with st.form("add_flashcard_form"):
-        przod = st.text_input("Przód (wymagane)", value=edytowana_fiszka["przod"] if is_edit_mode else "")
-        podpowiedz = st.text_input("Podpowiedź (opcjonalna)", value=edytowana_fiszka["podpowiedz"] if is_edit_mode else "")
-        tyl = st.text_input("Tył (wymagany)", value=edytowana_fiszka["tyl"] if is_edit_mode else "")
-        rozwiniecie = st.text_area("Wyjaśnienie (opcjonalne)", value=edytowana_fiszka["rozwiniecie"] if is_edit_mode else "")
-        wybrany_zestaw = st.selectbox("Zestaw", opcje_zestawow, index=opcje_zestawow.index(default_set_name))
-        submitted = st.form_submit_button("Zapisz fiszkę")
+        przod = st.text_input("Przód (wymagane)", value=edytowana_fiszka["przod"] if tryb_edycji else "")
+        podpowiedz = st.text_input("Podpowiedź (opcjonalna)", value=edytowana_fiszka["podpowiedz"] if tryb_edycji else "")
+        tyl = st.text_input("Tył (wymagany)", value=edytowana_fiszka["tyl"] if tryb_edycji else "")
+        rozwiniecie = st.text_area("Wyjaśnienie (opcjonalne)", value=edytowana_fiszka["rozwiniecie"] if tryb_edycji else "")
+        wybrany_zestaw = st.selectbox("Zestaw", opcje_zestawow, index=opcje_zestawow.index(domyslna_nazwa_zestawu))
+        col_zapisz, col_anuluj_usun = st.columns(2)
+        with col_zapisz:
+            submitted = st.form_submit_button("Zapisz fiszkę")
+        with col_anuluj_usun:
+            cancelled = st.form_submit_button("Usuń fiszkę" if tryb_edycji else "Anuluj")
 
         if submitted:
             if przod.strip() == "" or tyl.strip() == "":
@@ -382,7 +389,7 @@ elif st.session_state.active_page == "Dodaj fiszkę":
                 else:
                     id_zestawu = zestawy_uzytkownika[zestawy_uzytkownika["nazwa"] == wybrany_zestaw]["id"].values[0]
 
-                if is_edit_mode:
+                if tryb_edycji:
                     fiszki_df.loc[fiszki_df["id"] == edytowana_fiszka["id"], ["przod", "podpowiedz", "tyl", "rozwiniecie", "id_zestawu"]] = \
                         [przod, podpowiedz, tyl, rozwiniecie, id_zestawu]
                     st.success("Fiszka została zaktualizowana.")
@@ -394,7 +401,7 @@ elif st.session_state.active_page == "Dodaj fiszkę":
                         "podpowiedz": podpowiedz,
                         "tyl": tyl,
                         "rozwiniecie": rozwiniecie,
-                        "id_profilu": profile_id,
+                        "id_profilu": st.session_state.id_aktywnego_profilu,
                         "id_zestawu": id_zestawu
                     }])
                     fiszki_df = pd.concat([fiszki_df, nowa_fiszka], ignore_index=True)
@@ -404,33 +411,41 @@ elif st.session_state.active_page == "Dodaj fiszkę":
                 fiszki_df.to_csv("data/fiszki.csv", sep=";", index=False)
 
                 # Powrót do przeglądu zestawu
-                st.session_state.active_page = "Fiszki w zestawie"
-                st.session_state.edit_card_id = None
+                st.session_state.aktywna_strona = "Fiszki w zestawie"
+                st.session_state.id_aktywnej_fiszki = None
                 st.rerun()
+        if cancelled:
+            if tryb_edycji:
+                fiszki_df = fiszki_df[fiszki_df["id"] != edytowana_fiszka["id"]]
+                fiszki_df.to_csv("data/fiszki.csv", sep=";", index=False)
+                st.success("Fiszka została usunięta.")
+            st.session_state.aktywna_strona = "Fiszki w zestawie"
+            st.session_state.id_aktywnej_fiszki = None
+            st.rerun()
 
 ########################################################################################################################################
 # Strona profilu
-elif st.session_state.active_page == "Profil":
+elif st.session_state.aktywna_strona == "Profil":
     st.header("Profil")
 
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
-    if "selected_profile_id" not in st.session_state:
-        st.session_state.selected_profile_id = None
+    if "zalogowany" not in st.session_state:
+        st.session_state.zalogowany = False
+    if "id_aktywnego_profilu" not in st.session_state:
+        st.session_state.id_aktywnego_profilu = None
 
-    if not st.session_state.logged_in:
+    if not st.session_state.zalogowany:
         st.subheader("🔐 Zaloguj się")
 
         login_nick = st.text_input("Login (nick)")
-        login_password = st.text_input("Hasło", type="password")
+        login_haslo = st.text_input("Hasło", type="password")
 
         if st.button("Zaloguj"):
-            user = profile_df[profile_df["nick"] == login_nick]
-            if not user.empty:
-                stored_hash = user["haslo"].values[0]
-                if stored_hash == login_password:
-                    st.session_state.logged_in = True
-                    st.session_state.selected_profile_id = user["id"].values[0]
+            profil = profile_df[profile_df["nick"] == login_nick]
+            if not profil.empty:
+                haslo_w_bazie = profil["haslo"].values[0]
+                if haslo_w_bazie == login_haslo:
+                    st.session_state.zalogowany = True
+                    st.session_state.id_aktywnego_profilu = profil["id"].values[0]
                     st.success("Zalogowano pomyślnie.")
                     st.rerun()
                 else:
@@ -439,17 +454,17 @@ elif st.session_state.active_page == "Profil":
                 st.error("Nie znaleziono użytkownika.")
 
         if st.button("Zarejestruj się"):
-            st.session_state.active_page = "Rejestracja"
+            st.session_state.aktywna_strona = "Rejestracja"
             st.rerun()
 
 ########################################################################################################################################
 # Strona rejestracji
-elif st.session_state.active_page == "Rejestracja":
+elif st.session_state.aktywna_strona == "Rejestracja":
     st.header("Rejestracja")
     with st.form("registration_form"):
         new_nick = st.text_input("Nazwa użytkownika")
         new_password = st.text_input("Hasło", type="password")
-        confirm_password = st.text_input("Potwierdź hasło", type="password")
+        potwierdz_haslo = st.text_input("Potwierdź hasło", type="password")
         submitted = st.form_submit_button("Zarejestruj")
 
         if submitted:
@@ -458,7 +473,7 @@ elif st.session_state.active_page == "Rejestracja":
                 st.error("Nazwa użytkownika i hasło są wymagane.")
             elif new_nick in profile_df["nick"].values:
                 st.error("Taki użytkownik już istnieje.")
-            elif new_password != confirm_password:
+            elif new_password != potwierdz_haslo:
                 st.error("Hasła nie są zgodne.")
             else:
                 # Dodaj nowego użytkownika
