@@ -319,13 +319,87 @@ elif st.session_state.aktywna_strona == "Ucz się":
 ########################################################################################################################################
 # Strona nauki
 elif st.session_state.aktywna_strona == "Sesja nauki":
-    st.header("Nauka")
+    st.header(f"Tryb nauki: {st.session_state.tryb_nauki}")
+    st.markdown("---")
+
+    # Inicjalizacja stanu sesji
+    if "indeks_fiszki" not in st.session_state:
+        st.session_state.indeks_fiszki = 0
+        st.session_state.odwrocona = False
+        st.session_state.pokaz_podpowiedz = False
+        st.session_state.odpowiedzi_uzytkownika = {}
+
+    fiszki = st.session_state.fiszki_do_nauki
+    indeks = st.session_state.indeks_fiszki
+    fiszka = fiszki[indeks]
+
+    # Czasomierz
+    if st.session_state.czasomierz:
+        czas = int(ti.time() - st.session_state.start_time)
+        st.write(f"⏱️ Czas: {czas//60}:{czas%60:02d}")
+
+    st.subheader(f"Fiszka {indeks+1} z {len(fiszki)}")
+
+    # Wyświetlanie przodu fiszki
+    st.markdown(f"### {fiszka['przod']}")
+
+    if st.session_state.pokaz_podpowiedz and fiszka["podpowiedz"]:
+        st.info(f"💡 Podpowiedź: {fiszka['podpowiedz']}")
+
+    if not st.session_state.pokaz_podpowiedz and fiszka["podpowiedz"]:
+        if st.button("👁️ Pokaż podpowiedź"):
+            st.session_state.pokaz_podpowiedz = True
+            st.rerun()
+
+    tryb = st.session_state.tryb_nauki
+
+    if tryb == "Klasyczny":
+        if st.session_state.odwrocona:
+            st.markdown(f"**✅ Tył:** {fiszka['tyl']}")
+            if fiszka["rozwiniecie"]:
+                st.markdown(f"ℹ️ _{fiszka['rozwiniecie']}_")
+        if st.button("🔄 Odwróć fiszkę"):
+            st.session_state.odwrocona = not st.session_state.odwrocona
+
+    elif tryb == "Trening":
+        odp = st.text_input("✏️ Twoja odpowiedź:", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
+        if st.button("✅ Sprawdź odpowiedź"):
+            st.session_state.odpowiedzi_uzytkownika[indeks] = odp
+            st.session_state.odwrocona = True
+        if st.session_state.odwrocona:
+            poprawna = fiszka["tyl"].strip().lower()
+            uzytkowa = odp.strip().lower()
+            if poprawna == uzytkowa:
+                st.success("✅ Poprawna odpowiedź!")
+            else:
+                st.error(f"❌ Błędna. Poprawna to: **{fiszka['tyl']}**")
+            if fiszka["rozwiniecie"]:
+                st.markdown(f"ℹ️ _{fiszka['rozwiniecie']}_")
+
+    elif tryb == "Test":
+        odp = st.text_input("✏️ Twoja odpowiedź:", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
+        st.session_state.odpowiedzi_uzytkownika[indeks] = odp
 
     st.markdown("---")
 
-    if st.button("Zakończ sesję"):
-        st.session_state.aktywna_strona = "Podsumowanie sesji"
-        st.rerun()
+    # Nawigacja
+    col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 1, 1])
+    with col1:
+        if st.button("←", disabled=indeks == 0):
+            st.session_state.indeks_fiszki -= 1
+            st.session_state.odwrocona = False
+            st.session_state.pokaz_podpowiedz = False
+            st.rerun()
+    with col5:
+        if st.button("→", disabled=indeks == len(fiszki) - 1):
+            st.session_state.indeks_fiszki += 1
+            st.session_state.odwrocona = False
+            st.session_state.pokaz_podpowiedz = False
+            st.rerun()
+    with col3:
+        if st.button("❌ Zakończ sesję"):
+            st.session_state.aktywna_strona = "Podsumowanie sesji"
+            st.rerun()
 
 ########################################################################################################################################
 # Strona podsumowania sesji nauki
@@ -334,10 +408,30 @@ elif st.session_state.aktywna_strona == "Podsumowanie sesji":
 
     czas = int(ti.time() - st.session_state.start_time)
     st.write(f"⏱️ Czas: {czas//60}:{czas%60:02d}")
+    st.markdown("---")
+
+    tryb = st.session_state.tryb_nauki
+    if tryb in ["Test", "Trening"]:
+        st.subheader("📊 Wyniki")
+
+        fiszki = st.session_state.fiszki_do_nauki
+        odpowiedzi = st.session_state.odpowiedzi_uzytkownika
+        poprawne = 0
+
+        for i, fiszka in enumerate(fiszki):
+            user_ans = odpowiedzi.get(i, "").strip().lower()
+            correct = fiszka["tyl"].strip().lower()
+            if user_ans == correct:
+                poprawne += 1
+                st.markdown(f"✅ **{fiszka['przod']}** → {user_ans}")
+            else:
+                st.markdown(f"❌ **{fiszka['przod']}** → {user_ans or '_brak odpowiedzi_'} (poprawna: {fiszka['tyl']})")
+
+        st.write(f"**Wynik końcowy:** {poprawne} / {len(fiszki)}")
 
     st.markdown("---")
 
-    if st.button("Wróć do konfiguracji"):
+    if st.button("🔁 Wróć do konfiguracji"):
         st.session_state.aktywna_strona = "Ucz się"
         st.rerun()
 
