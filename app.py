@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import bcrypt as bc
+import streamlit_cookies_manager as scm
 
 ########################################################################################################################################
 # Podstawowa konfiguracja strony
@@ -11,7 +13,7 @@ st.set_page_config(
 )
 
 ########################################################################################################################################
-# Style
+# Style strony
 st.markdown('<div class="gradient-text">Fistaszki</div>', unsafe_allow_html=True)
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@350&family=EB+Garamond:ital@0;1&family=Lexend+Giga:wght@100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
@@ -105,7 +107,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 ########################################################################################################################################
-# Konfiguracja i pobranie danych z bazy
+# Funkcje do haseł (hashowanie oraz porównanie wprowadzonego z tym w bazie)
+def hash_haslo(haslo: str) -> str:
+    haslo_shashowane = bc.hashpw(haslo.encode('utf-8'), bc.gensalt())
+    return haslo_shashowane.decode('utf-8')
+def sprawdz_haslo(podane_haslo: str, haslo_z_bazy: str) -> bool:
+    haslo_z_bazy_bajty = haslo_z_bazy.encode('utf-8')
+    return bc.checkpw(podane_haslo.encode('utf-8'), haslo_z_bazy_bajty)
 
 # Wczytanie danych z CSV
 profile_df = pd.read_csv("data/profile.csv", sep=";")
@@ -120,7 +128,8 @@ if "id_aktywnego_profilu" not in st.session_state:
 
 st.markdown("---")
 
-# Pasek nawigacyjny
+########################################################################################################################################
+# Pasek nawigacyjny na górze stron
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     if st.button("Start"):
@@ -486,7 +495,7 @@ elif st.session_state.aktywna_strona == "Dodaj fiszkę":
             st.rerun()
 
 ########################################################################################################################################
-# Strona profilu
+# Strona profilu / logowania
 elif st.session_state.aktywna_strona == "Profil":
     st.header("Profil")
 
@@ -505,15 +514,15 @@ elif st.session_state.aktywna_strona == "Profil":
             profil = profile_df[profile_df["nick"] == login_nick]
             if not profil.empty:
                 haslo_w_bazie = profil["haslo"].values[0]
-                if haslo_w_bazie == login_haslo:
+                if sprawdz_haslo(login_haslo, haslo_w_bazie):
                     st.session_state.zalogowany = True
                     st.session_state.id_aktywnego_profilu = profil["id"].values[0]
                     st.success("Zalogowano pomyślnie.")
                     st.rerun()
                 else:
-                    st.error("Nieprawidłowe hasło.")
+                    st.error("Nieprawidłowy profil lub hasło.")
             else:
-                st.error("Nie znaleziono użytkownika.")
+                st.error("Nieprawidłowy profil lub hasło.")
 
         if st.button("Zarejestruj się"):
             st.session_state.aktywna_strona = "Rejestracja"
@@ -530,28 +539,29 @@ elif st.session_state.aktywna_strona == "Profil":
 elif st.session_state.aktywna_strona == "Rejestracja":
     st.header("Rejestracja")
     with st.form("registration_form"):
-        new_nick = st.text_input("Nazwa użytkownika")
-        new_password = st.text_input("Hasło", type="password")
+        nowy_profil = st.text_input("Nazwa użytkownika")
+        nowe_haslo = st.text_input("Hasło", type="password")
         potwierdz_haslo = st.text_input("Potwierdź hasło", type="password")
         submitted = st.form_submit_button("Zarejestruj")
 
         if submitted:
             # Walidacja
-            if new_nick.strip() == "" or new_password.strip() == "":
-                st.error("Nazwa użytkownika i hasło są wymagane.")
-            elif new_nick in profile_df["nick"].values:
-                st.error("Taki użytkownik już istnieje.")
-            elif new_password != potwierdz_haslo:
-                st.error("Hasła nie są zgodne.")
+            if nowy_profil.strip() == "" or nowe_haslo.strip() == "":
+                st.error("Nazwa profilu i hasło są wymagane.")
+            elif nowy_profil in profile_df["nick"].values:
+                st.error("Ta nazwa profilu jest już zajęta.")
+            elif nowe_haslo != potwierdz_haslo:
+                st.error("Hasła muszą być takie same.")
             else:
-                # Dodaj nowego użytkownika
-                new_id = profile_df["id"].max() + 1 if not profile_df.empty else 1
-                new_row = pd.DataFrame([{
-                    "id": new_id,
-                    "nick": new_nick,
-                    "haslo": new_password
+                # Dodaj nowy profil
+                nowe_id = profile_df["id"].max() + 1 if not profile_df.empty else 1
+                nowe_haslo_shashowane = hash_haslo(nowe_haslo)
+                nowy_row = pd.DataFrame([{
+                    "id": nowe_id,
+                    "nick": nowy_profil,
+                    "haslo": nowe_haslo_shashowane
                 }])
-                profile_df = pd.concat([profile_df, new_row], ignore_index=True)
+                profile_df = pd.concat([profile_df, nowy_row], ignore_index=True)
                 profile_df.to_csv("data/profile.csv", sep=";", index=False)
 
                 st.success("Rejestracja zakończona pomyślnie. Możesz się teraz zalogować.")
