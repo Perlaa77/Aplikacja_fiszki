@@ -1,3 +1,15 @@
+"""
+Fistaszki
+Aplikacja do nauki z fiszkami.
+
+Projekt z Uniwersalnych Metod Projektowania Aplikacji Na Urządzenia Mobilne i Wbudowane
+
+[Któtki opis podsumowywujący]
+
+Autorzy: [nasze imiona i nazwiska, uzupełnić gdy już kod będzie gotowy]
+Wersja: 1.0
+"""
+########################################################################################################################################
 # Podstawowa konfiguracja strony
 import streamlit as st
 st.set_page_config(
@@ -10,10 +22,11 @@ st.set_page_config(
 import pandas as pd
 import numpy as np
 import bcrypt as bc
-import streamlit_cookies_manager as scm
+import streamlit_cookies_manager as stcm
+import time as ti
 
 # Inicjalizacja ciasteczek
-ciasteczka = scm.EncryptedCookieManager(
+ciasteczka = stcm.EncryptedCookieManager(
     prefix="fistaszki",
     password="fis",
 )
@@ -115,16 +128,62 @@ st.markdown("""
 ########################################################################################################################################
 # Funkcje do haseł (hashowanie oraz porównanie wprowadzonego hasła z tym w bazie)
 def hash_haslo(haslo: str) -> str:
+    """
+    Hashuje hasło i konwertuje je do formatu str.
+    
+    Args:
+        haslo (str): Hasło w formie tekstowej
+        
+    Returns:
+        str: Zakodowane hasło
+        
+    Note:
+        Hasło jest konwertowane najpierw do formatu bajtów, po czym do str, aby umożliwić bezproblemowe przechowywanie go w pliku CSV.
+    """
     haslo_shashowane = bc.hashpw(haslo.encode('utf-8'), bc.gensalt())
     return haslo_shashowane.decode('utf-8')
 def sprawdz_haslo(podane_haslo: str, haslo_z_bazy: str) -> bool:
+    """
+    Sprawdza czy podane hasło zgadza się z hasłem przechowywanym w bazie.
+    
+    Args:
+        podane_haslo (str): Hasło podane przez użytwkonika
+        haslo_z_bazy (str): Zakodowane hasło odczytane z bazy
+        
+    Returns:
+        bool: True, jeśli podane hasło zgadza się z hasłem w bazie.
+        
+    Note:
+        Hasło podane przez użytkownika jest hashowane do formatu bajtów.
+        Zakodowane hasło z bazy również jest przekonwertowywane do formatu bajtów przed porównaniem.
+    """
     haslo_z_bazy_bajty = haslo_z_bazy.encode('utf-8')
     return bc.checkpw(podane_haslo.encode('utf-8'), haslo_z_bazy_bajty)
 
 # Wczytanie danych z CSV
-profile_df = pd.read_csv("data/profile.csv", sep=";")
-zestawy_df = pd.read_csv("data/zestawy.csv", sep=";")
-fiszki_df = pd.read_csv("data/fiszki.csv", sep=";")
+def zaladuj_dane_z_CSV(sciezka, kolumny):
+    """
+    Ładuje dane z pliku CSV z obsługą błędów.
+    
+    Args:
+        sciezka (str): Ścieżka do pliku CSV
+        kolumny (list): Lista nazw kolumn, które ma zawierać dana tablica danych
+        
+    Returns:
+        pandas.DataFrame: Załadowane dane lub pusty DataFrame przy błędzie
+        
+    Note:
+        Używa separatora średnika (;) do rozdzielania danych
+    """
+    try:
+        return pd.read_csv(sciezka, sep=";")
+    except:
+        st.info("Wystąpił błąd przy ładowaniu danych z bazy")
+        return pd.DataFrame(columns=kolumny)
+    
+profile_df = zaladuj_dane_z_CSV("data/profile.csv", ["id", "nick", "haslo"])
+zestawy_df = zaladuj_dane_z_CSV("data/zestawy.csv", ["id", "nazwa", "opis", "id_profilu"])
+fiszki_df = zaladuj_dane_z_CSV("data/fiszki.csv", ["id", "przod", "podpowiedz", "tyl", "rozwiniecie", "id_profilu", "id_zestawu"])
 
 # Stan aplikacji - ustawienie aktywnej strony przy pierwszym uruchomieniu
 if "aktywna_strona" not in st.session_state:
@@ -147,21 +206,22 @@ st.markdown("---")
 
 ########################################################################################################################################
 # Pasek nawigacyjny na górze stron
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    if st.button("Start"):
-        st.session_state.aktywna_strona = "Start"
-with col2:
-    if st.button("Ucz się"):
-        st.session_state.aktywna_strona = "Ucz się"
-with col3:
-    if st.button("Fiszki"):
-        st.session_state.aktywna_strona = "Fiszki"
-with col4:
-    if st.button("Profil"):
-        st.session_state.aktywna_strona = "Profil"
+if st.session_state.aktywna_strona != "Sesja nauki" and st.session_state.aktywna_strona != "Podsumowanie sesji":
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button("Start"):
+            st.session_state.aktywna_strona = "Start"
+    with col2:
+        if st.button("Ucz się"):
+            st.session_state.aktywna_strona = "Ucz się"
+    with col3:
+        if st.button("Fiszki"):
+            st.session_state.aktywna_strona = "Fiszki"
+    with col4:
+        if st.button("Profil"):
+            st.session_state.aktywna_strona = "Profil"
 
-st.markdown("---")
+    st.markdown("---")
 
 ########################################################################################################################################
 # Strona główna
@@ -251,6 +311,7 @@ elif st.session_state.aktywna_strona == "Ucz się":
                 st.session_state.fiszki_do_nauki = fiszki_z_wybranych.to_dict(orient="records")
 
             st.session_state.aktywna_strona = "Sesja nauki"
+            st.session_state.start_time = ti.time()
             st.rerun()
         else:
             st.info("Musisz wybrać co najmniej jeden zestaw zawierający fiszki.")
@@ -258,16 +319,25 @@ elif st.session_state.aktywna_strona == "Ucz się":
 ########################################################################################################################################
 # Strona nauki
 elif st.session_state.aktywna_strona == "Sesja nauki":
+    st.header("Nauka")
 
-    if st.button("Wyjdź z sesji"):
-        st.session_state.aktywna_strona = "Ucz się"
+    st.markdown("---")
+
+    if st.button("Zakończ sesję"):
+        st.session_state.aktywna_strona = "Podsumowanie sesji"
         st.rerun()
 
 ########################################################################################################################################
 # Strona podsumowania sesji nauki
 elif st.session_state.aktywna_strona == "Podsumowanie sesji":
+    st.header("Podsumowanie")
 
-    if st.button("← Powrót do konfiguracji"):
+    czas = int(ti.time() - st.session_state.start_time)
+    st.write(f"⏱️ Czas: {czas//60}:{czas%60:02d}")
+
+    st.markdown("---")
+
+    if st.button("Wróć do konfiguracji"):
         st.session_state.aktywna_strona = "Ucz się"
         st.rerun()
 
