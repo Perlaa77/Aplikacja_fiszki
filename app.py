@@ -465,6 +465,27 @@ elif st.session_state.aktywna_strona == "Podsumowanie sesji":
 
     st.markdown("---")
 
+    import os
+    sciezka_stat = "data/statystyki.csv"
+    kolumny_stat = ["id_profilu", "data", "czas", "typ", "wynik", "liczba_fiszek"]
+
+    nowy_rekord = {
+        "id_profilu": st.session_state.id_aktywnego_profilu,
+        "data": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+        "czas": czas,
+        "typ": tryb,
+        "wynik": poprawne if tryb in ["Test", "Trening"] else None,
+        "liczba_fiszek": len(st.session_state.fiszki_do_nauki)
+    }
+
+    if os.path.exists(sciezka_stat):
+        df_stat = pd.read_csv(sciezka_stat, sep=";")
+    else:
+        df_stat = pd.DataFrame(columns=kolumny_stat)
+
+    df_stat = pd.concat([df_stat, pd.DataFrame([nowy_rekord])], ignore_index=True)
+    df_stat.to_csv(sciezka_stat, sep=";", index=False)
+
     if st.button("🔁 Wróć do konfiguracji"):
         st.session_state.aktywna_strona = "Ucz się"
         st.rerun()
@@ -759,6 +780,43 @@ elif st.session_state.aktywna_strona == "Profil":
 
             st.success("Wylogowano pomyślnie.")
             st.rerun()
+
+        # Statystyki profilu
+        import os
+        st.markdown("---")
+        st.subheader("📈 Twoje statystyki:")
+
+        # Wczytaj dane statystyczne
+        stat_path = "data/statystyki.csv"
+        if os.path.exists(stat_path):
+            stat_df = pd.read_csv(stat_path, sep=";")
+            user_stats = stat_df[stat_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+
+            liczba_fiszek = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu].shape[0]
+            liczba_zestawow = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu].shape[0]
+            liczba_sesji = user_stats.shape[0]
+            suma_czasu = user_stats["czas"].sum()
+            sredni_czas = int(user_stats["czas"].mean()) if not user_stats.empty else 0
+
+            testy = user_stats[user_stats["typ"].isin(["Test", "Trening"])].dropna(subset=["wynik"])
+            if not testy.empty:
+                testy["procent"] = (testy["wynik"] / testy["liczba_fiszek"]) * 100
+                sredni_wynik = testy["procent"].mean()
+            else:
+                sredni_wynik = None
+
+            ostatnia_data = user_stats["data"].max() if not user_stats.empty else "Brak danych"
+
+            st.write(f"🧠 Fiszek: **{liczba_fiszek}**")
+            st.write(f"📚 Zestawów: **{liczba_zestawow}**")
+            st.write(f"📆 Sesji zakończonych: **{liczba_sesji}**")
+            st.write(f"⏱️ Łączny czas nauki: **{suma_czasu//60} min {suma_czasu%60} s**")
+            st.write(f"🕒 Średni czas sesji: **{sredni_czas//60} min {sredni_czas%60} s**")
+            if sredni_wynik is not None:
+                st.write(f"✅ Średni wynik: **{sredni_wynik:.1f}%**")
+            st.write(f"📅 Ostatnia aktywność: **{ostatnia_data}**")
+        else:
+            st.info("Brak danych statystycznych.")
 
 ########################################################################################################################################
 # Strona rejestracji
