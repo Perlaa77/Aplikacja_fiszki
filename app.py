@@ -1,15 +1,21 @@
+# Podstawowa konfiguracja strony
 import streamlit as st
+st.set_page_config(
+    page_title="Fistaszki",
+    page_icon="🥜",
+    layout="wide"
+)
+
+# Pozostałe importy
 import pandas as pd
 import numpy as np
 import bcrypt as bc
 import streamlit_cookies_manager as scm
 
-########################################################################################################################################
-# Podstawowa konfiguracja strony
-st.set_page_config(
-    page_title="Fistaszki",
-    page_icon="",
-    layout="wide"
+# Inicjalizacja ciasteczek
+ciasteczka = scm.EncryptedCookieManager(
+    prefix="fistaszki",
+    password="fis",
 )
 
 ########################################################################################################################################
@@ -107,7 +113,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 ########################################################################################################################################
-# Funkcje do haseł (hashowanie oraz porównanie wprowadzonego z tym w bazie)
+# Funkcje do haseł (hashowanie oraz porównanie wprowadzonego hasła z tym w bazie)
 def hash_haslo(haslo: str) -> str:
     haslo_shashowane = bc.hashpw(haslo.encode('utf-8'), bc.gensalt())
     return haslo_shashowane.decode('utf-8')
@@ -120,11 +126,22 @@ profile_df = pd.read_csv("data/profile.csv", sep=";")
 zestawy_df = pd.read_csv("data/zestawy.csv", sep=";")
 fiszki_df = pd.read_csv("data/fiszki.csv", sep=";")
 
-# Stan aplikacji (aktywna strona oraz profil)
+# Stan aplikacji - ustawienie aktywnej strony przy pierwszym uruchomieniu
 if "aktywna_strona" not in st.session_state:
     st.session_state.aktywna_strona = "Start"
+
+# Stan profilu - sprawdzenie ciasteczek i ustawienie zalogowanego profilu
 if "id_aktywnego_profilu" not in st.session_state:
-    st.session_state.id_aktywnego_profilu = None
+    if "id_aktywnego_profilu" in ciasteczka:
+        try:
+            st.session_state.id_aktywnego_profilu = int(ciasteczka["id_aktywnego_profilu"])
+            st.session_state.zalogowany = True
+        except:
+            st.session_state.zalogowany = False
+            st.session_state.id_aktywnego_profilu = None
+    else:
+        st.session_state.zalogowany = False
+        st.session_state.id_aktywnego_profilu = None
 
 st.markdown("---")
 
@@ -509,6 +526,7 @@ elif st.session_state.aktywna_strona == "Profil":
 
         login_nick = st.text_input("Login (nick)")
         login_haslo = st.text_input("Hasło", type="password")
+        zapamietaj_mnie = st.checkbox("Zapamiętaj mnie")
 
         if st.button("Zaloguj"):
             profil = profile_df[profile_df["nick"] == login_nick]
@@ -518,6 +536,11 @@ elif st.session_state.aktywna_strona == "Profil":
                     st.session_state.zalogowany = True
                     st.session_state.id_aktywnego_profilu = profil["id"].values[0]
                     st.success("Zalogowano pomyślnie.")
+
+                    if zapamietaj_mnie:
+                        ciasteczka["id_aktywnego_profilu"] = str(st.session_state.id_aktywnego_profilu)
+                        ciasteczka.save()
+
                     st.rerun()
                 else:
                     st.error("Nieprawidłowy profil lub hasło.")
@@ -527,10 +550,15 @@ elif st.session_state.aktywna_strona == "Profil":
         if st.button("Zarejestruj się"):
             st.session_state.aktywna_strona = "Rejestracja"
             st.rerun()
+
     elif st.session_state.zalogowany:
         if st.button("Wyloguj się"):
             st.session_state.zalogowany = False
             st.session_state.id_aktywnego_profilu = None
+            if "id_aktywnego_profilu" in ciasteczka:
+                ciasteczka["id_aktywnego_profilu"] = str(st.session_state.id_aktywnego_profilu)
+                ciasteczka.save()
+
             st.success("Wylogowano pomyślnie.")
             st.rerun()
 
