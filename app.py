@@ -122,6 +122,22 @@ st.markdown("""
             margin: 5px auto !important;
         }
     }
+
+    /* Fiszka */       
+    .fiszka-box {
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        padding: 30px;
+        margin: 20px auto;
+        max-width: 700px;
+        font-size: 20px;
+        color: black;
+        text-align: center;
+    }
+    .fiszka-box h3 {
+        margin: 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -341,7 +357,7 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
     st.subheader(f"Fiszka {indeks+1} z {len(fiszki)}")
 
     # Wyświetlanie przodu fiszki
-    st.markdown(f"### {fiszka['przod']}")
+    st.markdown(f'<div class="fiszka-box"><h3>{fiszka["przod"]}</h3></div>', unsafe_allow_html=True)
 
     if st.session_state.pokaz_podpowiedz and fiszka["podpowiedz"]:
         st.info(f"💡 Podpowiedź: {fiszka['podpowiedz']}")
@@ -355,9 +371,10 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
 
     if tryb == "Klasyczny":
         if st.session_state.odwrocona:
-            st.markdown(f"**✅ Tył:** {fiszka['tyl']}")
+            st.markdown(f'<div class="fiszka-box"><h3>{fiszka["tyl"]}</h3></div>', unsafe_allow_html=True)
             if fiszka["rozwiniecie"]:
-                st.markdown(f"ℹ️ _{fiszka['rozwiniecie']}_")
+                st.markdown(f'<div class="fiszka-box" style="font-size:16px;"><i>{fiszka["rozwiniecie"]}</i></div>', unsafe_allow_html=True)
+
         if st.button("🔄 Odwróć fiszkę"):
             st.session_state.odwrocona = not st.session_state.odwrocona
 
@@ -374,7 +391,7 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
             else:
                 st.error(f"❌ Błędna. Poprawna to: **{fiszka['tyl']}**")
             if fiszka["rozwiniecie"]:
-                st.markdown(f"ℹ️ _{fiszka['rozwiniecie']}_")
+                  st.markdown(f'<div class="fiszka-box" style="font-size:16px;"><i>{fiszka["rozwiniecie"]}</i></div>', unsafe_allow_html=True)
 
     elif tryb == "Test":
         odp = st.text_input("✏️ Twoja odpowiedź:", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
