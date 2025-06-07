@@ -395,21 +395,23 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
 
     if not st.session_state.odwrocona and fiszka["podpowiedz"]:
         if st.session_state.pokaz_podpowiedz:
-            st.info(f"💡 Podpowiedź: {fiszka['podpowiedz']}")
+            st.info(f"Podpowiedź: {fiszka['podpowiedz']}")
         else:
-            if st.button("👁️ Pokaż podpowiedź"):
+            if st.button("Pokaż podpowiedź"):
                 st.session_state.pokaz_podpowiedz = True
                 st.rerun()
 
     # --- Tryby ---
     if tryb == "Klasyczny":
-        if st.button("🔄 Odwróć fiszkę"):
+        if st.button("Odwróć fiszkę"):
             st.session_state.odwrocona = not st.session_state.odwrocona
             st.rerun()
 
     elif tryb == "Trening":
-        odp = st.text_input("✏️ Twoja odpowiedź:", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
-        if st.button("✅ Sprawdź odpowiedź"):
+        odp = st.text_input("✏️ Twoja odpowiedź:", key=f"odp_{indeks}", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
+        if odp.strip() != "":
+            st.session_state.odpowiedzi_uzytkownika[indeks] = odp
+        if st.button("Sprawdź odpowiedź"):
             st.session_state.odpowiedzi_uzytkownika[indeks] = odp
             st.session_state.odwrocona = True
             st.rerun()
