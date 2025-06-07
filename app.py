@@ -19,6 +19,7 @@ st.set_page_config(
 )
 
 # Pozostałe importy
+import os
 import pandas as pd
 import numpy as np
 import bcrypt as bc
@@ -134,6 +135,7 @@ st.markdown("""
         font-size: 20px;
         color: black;
         text-align: center;
+        font-size: 16px;
     }
     .fiszka-box h3 {
         margin: 0;
@@ -200,6 +202,7 @@ def zaladuj_dane_z_CSV(sciezka, kolumny):
 profile_df = zaladuj_dane_z_CSV("data/profile.csv", ["id", "nick", "haslo"])
 zestawy_df = zaladuj_dane_z_CSV("data/zestawy.csv", ["id", "nazwa", "opis", "id_profilu"])
 fiszki_df = zaladuj_dane_z_CSV("data/fiszki.csv", ["id", "przod", "podpowiedz", "tyl", "rozwiniecie", "id_profilu", "id_zestawu"])
+statystyki_df = zaladuj_dane_z_CSV("data/statystyki.csv", ["id_profilu", "data", "czas", "typ", "wynik", "liczba_fiszek"])
 
 # Stan aplikacji - ustawienie aktywnej strony przy pierwszym uruchomieniu
 if "aktywna_strona" not in st.session_state:
@@ -342,7 +345,9 @@ elif st.session_state.aktywna_strona == "Ucz się":
                     "fiszki": st.session_state.fiszki_do_nauki
                 }
 
-
+            for key in ["indeks_fiszki", "odwrocona", "pokaz_podpowiedz", "odpowiedzi_uzytkownika"]:
+                if key in st.session_state:
+                    del st.session_state[key]
             st.session_state.aktywna_strona = "Sesja nauki"
             st.session_state.start_time = ti.time()
             st.rerun()
@@ -351,9 +356,15 @@ elif st.session_state.aktywna_strona == "Ucz się":
 
 ########################################################################################################################################
 # Strona nauki
+
 elif st.session_state.aktywna_strona == "Sesja nauki":
     st.header(f"Tryb nauki: {st.session_state.tryb_nauki}")
-    st.markdown("---")
+    if st.session_state.fiszki_do_nauki:
+        id_zestawu = st.session_state.fiszki_do_nauki[0]["id_zestawu"]
+        if id_zestawu != 0:
+            nazwa_zestawu = zestawy_df[zestawy_df["id"] == id_zestawu]["nazwa"].values[0]
+            st.subheader(f"Zestaw: {nazwa_zestawu}")
+        st.markdown("---")
 
     # Inicjalizacja stanu sesji
     if "indeks_fiszki" not in st.session_state:
@@ -373,33 +384,35 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
 
     st.subheader(f"Fiszka {indeks+1} z {len(fiszki)}")
 
-    # Wyświetlanie przodu fiszki
-    st.markdown(f'<div class="fiszka-box"><h3>{fiszka["przod"]}</h3></div>', unsafe_allow_html=True)
-
-    if st.session_state.pokaz_podpowiedz and fiszka["podpowiedz"]:
-        st.info(f"💡 Podpowiedź: {fiszka['podpowiedz']}")
-
-    if not st.session_state.pokaz_podpowiedz and fiszka["podpowiedz"]:
-        if st.button("👁️ Pokaż podpowiedź"):
-            st.session_state.pokaz_podpowiedz = True
-            st.rerun()
-
     tryb = st.session_state.tryb_nauki
 
-    if tryb == "Klasyczny":
-        if st.session_state.odwrocona:
-            st.markdown(f'<div class="fiszka-box"><h3>{fiszka["tyl"]}</h3></div>', unsafe_allow_html=True)
-            if fiszka["rozwiniecie"]:
-                st.markdown(f'<div class="fiszka-box" style="font-size:16px;"><i>{fiszka["rozwiniecie"]}</i></div>', unsafe_allow_html=True)
+    zawartosc_fiszki = f"<h3>{fiszka['przod']}</h3>"
+    if st.session_state.odwrocona and tryb != "Test":
+        zawartosc_fiszki = f"<h3>{fiszka['tyl']}</h3>"
+        if fiszka["rozwiniecie"]:
+            zawartosc_fiszki += f"<p style='font-size:14px;'><i>{fiszka['rozwiniecie']}</i></p>"
+    st.markdown(f'<div class="fiszka-box">{zawartosc_fiszki}</div>', unsafe_allow_html=True)
 
+    if not st.session_state.odwrocona and fiszka["podpowiedz"]:
+        if st.session_state.pokaz_podpowiedz:
+            st.info(f"💡 Podpowiedź: {fiszka['podpowiedz']}")
+        else:
+            if st.button("👁️ Pokaż podpowiedź"):
+                st.session_state.pokaz_podpowiedz = True
+                st.rerun()
+
+    # --- Tryby ---
+    if tryb == "Klasyczny":
         if st.button("🔄 Odwróć fiszkę"):
             st.session_state.odwrocona = not st.session_state.odwrocona
+            st.rerun()
 
     elif tryb == "Trening":
         odp = st.text_input("✏️ Twoja odpowiedź:", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
         if st.button("✅ Sprawdź odpowiedź"):
             st.session_state.odpowiedzi_uzytkownika[indeks] = odp
             st.session_state.odwrocona = True
+            st.rerun()
         if st.session_state.odwrocona:
             poprawna = fiszka["tyl"].strip().lower()
             uzytkowa = odp.strip().lower()
@@ -407,32 +420,29 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
                 st.success("✅ Poprawna odpowiedź!")
             else:
                 st.error(f"❌ Błędna. Poprawna to: **{fiszka['tyl']}**")
-            if fiszka["rozwiniecie"]:
-                  st.markdown(f'<div class="fiszka-box" style="font-size:16px;"><i>{fiszka["rozwiniecie"]}</i></div>', unsafe_allow_html=True)
 
     elif tryb == "Test":
-        odp = st.text_input("✏️ Twoja odpowiedź:", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
-        st.session_state.odpowiedzi_uzytkownika[indeks] = odp
-
-    st.markdown("---")
+        odp = st.text_input("✏️ Twoja odpowiedź:", key=f"odp_{indeks}", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
+        if odp.strip() != "":
+            st.session_state.odpowiedzi_uzytkownika[indeks] = odp
 
     # Nawigacja
-    col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 1, 1])
+    col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("←", disabled=indeks == 0):
             st.session_state.indeks_fiszki -= 1
             st.session_state.odwrocona = False
             st.session_state.pokaz_podpowiedz = False
             st.rerun()
-    with col5:
+    with col2:
+        if st.button("❌ Zakończ sesję"):
+            st.session_state.aktywna_strona = "Podsumowanie sesji"
+            st.rerun()
+    with col3:
         if st.button("→", disabled=indeks == len(fiszki) - 1):
             st.session_state.indeks_fiszki += 1
             st.session_state.odwrocona = False
             st.session_state.pokaz_podpowiedz = False
-            st.rerun()
-    with col3:
-        if st.button("❌ Zakończ sesję"):
-            st.session_state.aktywna_strona = "Podsumowanie sesji"
             st.rerun()
 
 ########################################################################################################################################
@@ -441,12 +451,11 @@ elif st.session_state.aktywna_strona == "Podsumowanie sesji":
     st.header("Podsumowanie")
 
     czas = int(ti.time() - st.session_state.start_time)
-    st.write(f"⏱️ Czas: {czas//60}:{czas%60:02d}")
-    st.markdown("---")
+    st.write(f"🕑 Czas: {czas//60}:{czas%60:02d}")
 
     tryb = st.session_state.tryb_nauki
     if tryb in ["Test", "Trening"]:
-        st.subheader("📊 Wyniki")
+        st.subheader("Wyniki")
 
         fiszki = st.session_state.fiszki_do_nauki
         odpowiedzi = st.session_state.odpowiedzi_uzytkownika
@@ -465,30 +474,10 @@ elif st.session_state.aktywna_strona == "Podsumowanie sesji":
 
     st.markdown("---")
 
-    import os
-    sciezka_stat = "data/statystyki.csv"
-    kolumny_stat = ["id_profilu", "data", "czas", "typ", "wynik", "liczba_fiszek"]
-
-    nowy_rekord = {
-        "id_profilu": st.session_state.id_aktywnego_profilu,
-        "data": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
-        "czas": czas,
-        "typ": tryb,
-        "wynik": poprawne if tryb in ["Test", "Trening"] else None,
-        "liczba_fiszek": len(st.session_state.fiszki_do_nauki)
-    }
-
-    if os.path.exists(sciezka_stat):
-        df_stat = pd.read_csv(sciezka_stat, sep=";")
-    else:
-        df_stat = pd.DataFrame(columns=kolumny_stat)
-
-    df_stat = pd.concat([df_stat, pd.DataFrame([nowy_rekord])], ignore_index=True)
-    df_stat.to_csv(sciezka_stat, sep=";", index=False)
-
-    if st.button("🔁 Wróć do konfiguracji"):
+    if st.button("Wróć do konfiguracji"):
         st.session_state.aktywna_strona = "Ucz się"
         st.rerun()
+
 
 ########################################################################################################################################
 # Strona zarządzania zestawami
@@ -782,9 +771,7 @@ elif st.session_state.aktywna_strona == "Profil":
             st.rerun()
 
         # Statystyki profilu
-        import os
-        st.markdown("---")
-        st.subheader("📈 Twoje statystyki:")
+        st.subheader("Twoje statystyki:")
 
         # Wczytaj dane statystyczne
         stat_path = "data/statystyki.csv"
@@ -807,14 +794,14 @@ elif st.session_state.aktywna_strona == "Profil":
 
             ostatnia_data = user_stats["data"].max() if not user_stats.empty else "Brak danych"
 
-            st.write(f"🧠 Fiszek: **{liczba_fiszek}**")
-            st.write(f"📚 Zestawów: **{liczba_zestawow}**")
-            st.write(f"📆 Sesji zakończonych: **{liczba_sesji}**")
-            st.write(f"⏱️ Łączny czas nauki: **{suma_czasu//60} min {suma_czasu%60} s**")
-            st.write(f"🕒 Średni czas sesji: **{sredni_czas//60} min {sredni_czas%60} s**")
+            st.write(f"Fiszek: **{liczba_fiszek}**")
+            st.write(f"Zestawów: **{liczba_zestawow}**")
+            st.write(f"Sesji zakończonych: **{liczba_sesji}**")
+            st.write(f"Łączny czas nauki: **{suma_czasu//60} min {suma_czasu%60} s**")
+            st.write(f"Średni czas sesji: **{sredni_czas//60} min {sredni_czas%60} s**")
             if sredni_wynik is not None:
-                st.write(f"✅ Średni wynik: **{sredni_wynik:.1f}%**")
-            st.write(f"📅 Ostatnia aktywność: **{ostatnia_data}**")
+                st.write(f"Średni wynik: **{sredni_wynik:.1f}%**")
+            st.write(f"Ostatnia aktywność: **{ostatnia_data}**")
         else:
             st.info("Brak danych statystycznych.")
 
