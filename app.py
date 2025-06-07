@@ -247,6 +247,15 @@ if st.session_state.aktywna_strona == "Start":
     if st.session_state.id_aktywnego_profilu is not None:
         nick = profile_df.loc[profile_df["id"] == st.session_state.id_aktywnego_profilu, "nick"].values[0]
         st.header(f"👋 Cześć, {nick}!")
+        if "ostatnia_sesja" in st.session_state:
+            if st.button("🔁 Powtórz ostatnią sesję"):
+                st.session_state.tryb_nauki = st.session_state.ostatnia_sesja["tryb"]
+                st.session_state.czasomierz = st.session_state.ostatnia_sesja["czasomierz"]
+                st.session_state.fiszki_do_nauki = st.session_state.ostatnia_sesja["fiszki"]
+                st.session_state.aktywna_strona = "Sesja nauki"
+                st.session_state.start_time = ti.time()
+                st.rerun()
+
     else:
         st.header("👋 Cześć!")
 
@@ -325,6 +334,14 @@ elif st.session_state.aktywna_strona == "Ucz się":
                 st.session_state.fiszki_do_nauki = fiszki_do_wyboru.to_dict(orient="records")
             else:
                 st.session_state.fiszki_do_nauki = fiszki_z_wybranych.to_dict(orient="records")
+
+            # Zapamiętanie ostatniej sesji
+                st.session_state.ostatnia_sesja = {
+                    "tryb": tryb_nauki,
+                    "czasomierz": czasomierz,
+                    "fiszki": st.session_state.fiszki_do_nauki
+                }
+
 
             st.session_state.aktywna_strona = "Sesja nauki"
             st.session_state.start_time = ti.time()
