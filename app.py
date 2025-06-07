@@ -249,9 +249,9 @@ elif st.session_state.aktywna_strona == "Ucz się":
 
     # Wybór trybu nauki
     tryb_opis = {
-        "Klasyczny": "Kliknij na fiszkę, by zobaczyć jej tył.",
-        "Trening": "Wpisz odpowiedź i sprawdź, czy jest poprawna.",
-        "Test": "Wpisz odpowiedzi dla wszystkich fiszek i sprawdź wynik w podsumowaniu."
+        "Klasyczny": "Kliknij na fiszkę, by zobaczyć jej tył.", # przód, przycisk by zobaczyć podp, przycisk do obrotu (tył oraz wyjaśnienie), przyciski wstecz i dalej/"Zakończ sesję"
+        "Trening": "Wpisz odpowiedź i sprawdź, czy jest poprawna.", # przód, przycisk by zobaczyć podp, pole na wpisanie własnej odpowiedzi, przycisk do obrotu/"Sprawdź odpowiedź" (tył oraz wyjaśnienie plus info czy odp była poprawna), przyciski wstecz i dalej/"Zakończ sesję"
+        "Test": "Wpisz odpowiedzi dla wszystkich fiszek i sprawdź wynik w podsumowaniu." # przód, przycisk by zobaczyć podp, pole na wpisanie własnej odpowiedzi, przycisk dalej/"Zakończ sesję"
     }
     tryb_nauki = st.selectbox(
         "Wybierz tryb nauki:",
