@@ -4,9 +4,9 @@ Aplikacja do nauki z fiszkami.
 
 Projekt z Uniwersalnych Metod Projektowania Aplikacji Na Urządzenia Mobilne i Wbudowane
 
-[Któtki opis podsumowywujący]
+[Któtki opis podsumowujący]
 
-Autorzy: [nasze imiona i nazwiska, uzupełnić gdy już kod będzie gotowy]
+Autorzy: [Hryciuk Aleksandra, Morawiec Victoria, Morchat Filip]
 Wersja: 1.0
 """
 ########################################################################################################################################
@@ -753,15 +753,52 @@ elif st.session_state.aktywna_strona == "Profil":
 
                     st.rerun()
                 else:
-                    st.error("Nieprawidłowy profil lub hasło.")
+                    st.error("Nieprawidłowy nick lub hasło.")
             else:
-                st.error("Nieprawidłowy profil lub hasło.")
+                st.error("Nieprawidłowy nick lub hasło.")
 
         if st.button("Zarejestruj się"):
             st.session_state.aktywna_strona = "Rejestracja"
             st.rerun()
 
     elif st.session_state.zalogowany:
+
+    # ➕ Dane użytkownika
+        aktywny_id = st.session_state.id_aktywnego_profilu
+        uzytkownik = profile_df[profile_df["id"] == aktywny_id].iloc[0]
+
+        st.subheader("Dane profilu")
+        st.markdown(f"""
+        Nazwa użytkownika: **{uzytkownik['nick']}**
+        """)
+
+        # ➕ Przycisk edycji
+        with st.expander("Edytuj profil"):
+            nowy_nick = st.text_input("Nowa nazwa użytkownika", value=uzytkownik['nick'])
+            nowe_haslo = st.text_input("Nowe hasło", type="password")
+            potwierdz_haslo = st.text_input("Potwierdź nowe hasło", type="password")
+
+            if st.button("Zapisz zmiany"):
+                # Walidacja
+                if nowy_nick.strip() == "":
+                    st.error("Nazwa użytkownika nie może być pusta.")
+                elif nowe_haslo != potwierdz_haslo:
+                    st.error("Hasła się nie zgadzają.")
+                elif nowy_nick != uzytkownik["nick"] and nowy_nick in profile_df["nick"].values:
+                    st.error("Taki użytkownik już istnieje.")
+                else:
+                    # Aktualizacja
+                    profile_df.loc[profile_df["id"] == aktywny_id, "nick"] = nowy_nick
+                    if nowe_haslo.strip():
+                        profile_df.loc[profile_df["id"] == aktywny_id, "haslo"] = nowe_haslo
+
+                    # Zapisz
+                    profile_df.to_csv("data/profile.csv", sep=";", index=False)
+
+                    st.success("Dane profilu zostały zaktualizowane.")
+                    st.session_state.nick = nowy_nick
+                    st.rerun()
+
         if st.button("Wyloguj się"):
             st.session_state.zalogowany = False
             st.session_state.id_aktywnego_profilu = None
