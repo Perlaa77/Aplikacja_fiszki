@@ -589,7 +589,15 @@ elif st.session_state.aktywna_strona == "Fiszki":
     # Zestawy danego profilu
     st.markdown("---")
     st.header("Twoje zestawy:")
+
+    fraza_zestawu = st.text_input("🔍 Szukaj w swoich zestawach", placeholder="Wpisz nazwę zestawu")
+
     zestawy_profilu = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+
+    if fraza_zestawu:
+        zestawy_profilu = zestawy_profilu[
+            zestawy_profilu["nazwa"].str.contains(fraza_zestawu, case=False, na=False)
+        ]
     if not zestawy_profilu.empty:
         for _, row in zestawy_profilu.iterrows():
             if st.button(row["nazwa"], key=f"zestaw_{row['id']}"):
@@ -598,6 +606,8 @@ elif st.session_state.aktywna_strona == "Fiszki":
                 st.rerun()
     else:
         st.write("Brak zestawów.")
+
+
 
     # Fiszki bez przypisanego zestawu
     st.markdown("---")
@@ -616,11 +626,12 @@ elif st.session_state.aktywna_strona == "Fiszki":
 ########################################################################################################################################
 # Strona zarządzania fiszkami w konkretnym zestawie
 elif st.session_state.aktywna_strona == "Fiszki w zestawie":
-
+    fraza_fiszki = st.text_input("🔍 Szukaj fiszek", placeholder="Wpisz tekst z przodu lub tyłu fiszki")
+    
     # Wyświetlanie fiszek w zestawie
     if st.session_state.id_aktywnego_zestawu is not None:
         zestaw = zestawy_df[zestawy_df["id"] == st.session_state.id_aktywnego_zestawu].iloc[0]
-        st.header(f"Zestaw: {zestaw['nazwa']}")
+        st.header(f"Zestaw: {zestaw['nazwa']}")    
         col1, col2 = st.columns(2)
         with col1:
             if st.button("➕ Dodaj fiszkę"):
@@ -634,6 +645,11 @@ elif st.session_state.aktywna_strona == "Fiszki w zestawie":
             (fiszki_df["id_zestawu"] == zestaw["id"]) &
             (fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu)
         ]
+        if fraza_fiszki:
+            fiszki = fiszki[
+                fiszki["przod"].str.contains(fraza_fiszki, case=False, na=False) |
+                fiszki["tyl"].str.contains(fraza_fiszki, case=False, na=False)
+            ]
     # Wyświetlanie fiszek, które nie mają zestawu
     else:
         st.header("Fiszki bez zestawu")
