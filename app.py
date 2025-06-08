@@ -33,7 +33,7 @@ ciasteczka = stcm.EncryptedCookieManager(
 )
 
 ########################################################################################################################################
-# Style strony
+# Style strony i gradientowa nazwa
 st.markdown('<div class="gradient-text">Fistaszki</div>', unsafe_allow_html=True)
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@350&family=EB+Garamond:ital@0;1&family=Lexend+Giga:wght@100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
@@ -243,12 +243,15 @@ if st.session_state.aktywna_strona != "Sesja nauki" and st.session_state.aktywna
 # Strona główna
 if st.session_state.aktywna_strona == "Start":
     
-    # Powitanie
+    # Jeśli zalogowany
     if st.session_state.id_aktywnego_profilu is not None:
+        #Powitanie
         nick = profile_df.loc[profile_df["id"] == st.session_state.id_aktywnego_profilu, "nick"].values[0]
         st.header(f"👋 Cześć, {nick}!")
+
+        # Powtórzenie ostatniej sesji
         if "ostatnia_sesja" in st.session_state:
-            if st.button("🔁 Powtórz ostatnią sesję"):
+            if st.button("Powtórz ostatnią sesję"):
                 st.session_state.tryb_nauki = st.session_state.ostatnia_sesja["tryb"]
                 st.session_state.czasomierz = st.session_state.ostatnia_sesja["czasomierz"]
                 st.session_state.fiszki_do_nauki = st.session_state.ostatnia_sesja["fiszki"]
@@ -256,54 +259,49 @@ if st.session_state.aktywna_strona == "Start":
                 st.session_state.start_time = ti.time()
                 st.rerun()
 
+        # Wyszukiwanie fiszek
+        st.subheader("Wyszukaj zestawy fiszek")
+        fraza = st.text_input("Wpisz słowo kluczowe", placeholder="np. język angielski")
+        if fraza:
+            dopasowane_zestawy = zestawy_df[
+                zestawy_df["nazwa"].str.contains(fraza, case=False, na=False) |
+                zestawy_df["opis"].str.contains(fraza, case=False, na=False)
+            ]
+            if dopasowane_zestawy.empty:
+                st.info("Brak zestawów spełniających kryteria.")
+            else:
+                for _, zestaw in dopasowane_zestawy.iterrows():
+                    autor = "Nieznany"
+                    try:
+                        profile_match = profile_df.loc[profile_df["id"] == zestaw["id_profilu"], "nick"]
+                        if not profile_match.empty:
+                            autor = profile_match.values[0]
+                    except:
+                        pass
+
+                    st.markdown(f"""
+                    #### {zestaw['nazwa']}
+                    **Opis:** {zestaw['opis']}  
+                    **Autor:** {autor}
+                    """)
+                    
+                    liczba_fiszek = fiszki_df[fiszki_df["id_zestawu"] == zestaw["id"]].shape[0]
+                    st.write(f"Liczba fiszek w zestawie: {liczba_fiszek}")
+
+                    if st.button(f"Ucz się z tego zestawu", key=f"start_{zestaw['id']}"):
+                        st.session_state.aktywna_strona = "Ucz się"
+                        st.session_state.wybrany_zestaw_do_nauki = {
+                            'id': zestaw['id'],
+                            'nazwa': zestaw['nazwa'],
+                            'id_profilu': zestaw['id_profilu']
+                        }
+                        st.rerun()
+
+    # Jeśli niezalogowany
     else:
         st.header("👋 Cześć!")
-
-    # Informacja jeśli nie wybrano profilu
-    if st.session_state.id_aktywnego_profilu is None:
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
     
-    st.markdown("### Wyszukaj zestawy fiszek")
-    fraza = st.text_input("Wpisz słowo kluczowe", placeholder="np. język angielski")
-
-    if fraza:
-        dopasowane_zestawy = zestawy_df[
-            zestawy_df["nazwa"].str.contains(fraza, case=False, na=False) |
-            zestawy_df["opis"].str.contains(fraza, case=False, na=False)
-        ]
-
-        if dopasowane_zestawy.empty:
-            st.info("Brak zestawów spełniających kryteria.")
-        else:
-             for _, zestaw in dopasowane_zestawy.iterrows():
-                # Bezpieczne pobieranie autora
-                autor = "Nieznany"
-                try:
-                    profile_match = profile_df.loc[profile_df["id"] == zestaw["id_profilu"], "nick"]
-                    if not profile_match.empty:
-                        autor = profile_match.values[0]
-                except:
-                    pass
-
-                st.markdown(f"""
-                #### {zestaw['nazwa']}
-                **Opis:** {zestaw['opis']}  
-                **Autor:** {autor}
-                """)
-                
-                liczba_fiszek = fiszki_df[fiszki_df["id_zestawu"] == zestaw["id"]].shape[0]
-                st.write(f"Liczba fiszek w zestawie: {liczba_fiszek}")
-
-                if st.button(f"Ucz się z tego zestawu", key=f"start_{zestaw['id']}"):
-                    st.session_state.aktywna_strona = "Ucz się"
-                    st.session_state.wybrany_zestaw_do_nauki = {
-                        'id': zestaw['id'],
-                        'nazwa': zestaw['nazwa'],
-                        'id_profilu': zestaw['id_profilu']
-                    }
-                    st.rerun()
-
-
 ########################################################################################################################################
 # Strona konfiguracji nauki
 elif st.session_state.aktywna_strona == "Ucz się":
@@ -314,17 +312,17 @@ elif st.session_state.aktywna_strona == "Ucz się":
         st.stop()
 
     # Wybór trybu nauki
-    tryb_opis = {
-        "Klasyczny": "Kliknij na fiszkę, by zobaczyć jej tył.", # przód, przycisk by zobaczyć podp, przycisk do obrotu (tył oraz wyjaśnienie), przyciski wstecz i dalej/"Zakończ sesję"
-        "Trening": "Wpisz odpowiedź i sprawdź, czy jest poprawna.", # przód, przycisk by zobaczyć podp, pole na wpisanie własnej odpowiedzi, przycisk do obrotu/"Sprawdź odpowiedź" (tył oraz wyjaśnienie plus info czy odp była poprawna), przyciski wstecz i dalej/"Zakończ sesję"
-        "Test": "Wpisz odpowiedzi dla wszystkich fiszek i sprawdź wynik w podsumowaniu." # przód, przycisk by zobaczyć podp, pole na wpisanie własnej odpowiedzi, przycisk dalej/"Zakończ sesję"
+    tryby = {
+        "Klasyczny": "Kliknij na fiszkę, by zobaczyć jej tył.",
+        "Trening": "Wpisz odpowiedź i sprawdź, czy jest poprawna.",
+        "Test": "Wpisz odpowiedzi dla wszystkich fiszek i sprawdź wynik w podsumowaniu."
     }
     tryb_nauki = st.selectbox(
         "Wybierz tryb nauki:",
-        options=list(tryb_opis.keys()),
+        options=list(tryby.keys()),
         index=0
     )
-    st.write(f"{tryb_opis[tryb_nauki]}")
+    st.write(f"{tryby[tryb_nauki]}")
 
     # Czasomierz
     czasomierz = st.checkbox("⏱️ Pokaż licznik czasu")
@@ -332,35 +330,30 @@ elif st.session_state.aktywna_strona == "Ucz się":
     st.markdown("---")
 
     # Wybór zestawów do nauki
-    
     zestawy_uzytkownika = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
     fiszki_uzytkownika = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
-
     wszystkie_opcje_zestawow = zestawy_uzytkownika["nazwa"].tolist()
 
     default_wybrane_zestawy = []
     if 'wybrany_zestaw_do_nauki' in st.session_state:
         wybrany = st.session_state.wybrany_zestaw_do_nauki
-        # Jeśli to dict z pola wyszukiwarki, dodaj jego nazwę do opcji
         if isinstance(wybrany, dict):
             if wybrany['nazwa'] not in wszystkie_opcje_zestawow:
                 wszystkie_opcje_zestawow.append(wybrany['nazwa'])
             default_wybrane_zestawy = [wybrany['nazwa']]
         elif isinstance(wybrany, list):
-            # Lista z sesji – tylko te, które są w dostępnych opcjach
             default_wybrane_zestawy = [z for z in wybrany if z in wszystkie_opcje_zestawow]
         else:
             default_wybrane_zestawy = []
     else:
         default_wybrane_zestawy = []
 
-    # Wyświetl Multiselect
+    # Wyświetlenie Multiselect
     wybrane_zestawy = st.multiselect(
         "Wybierz zestawy do nauki:",
         options=wszystkie_opcje_zestawow,
         default=default_wybrane_zestawy
     )
-
     st.session_state.wybrany_zestaw_do_nauki = wybrane_zestawy
 
     # Wybór konkretnych fiszek do nauki
@@ -369,27 +362,23 @@ elif st.session_state.aktywna_strona == "Ucz się":
         fiszki_z_wybranych = pd.DataFrame()
         
         for nazwa in wybrane_zestawy:
+            # Fiszki bez zestawu
             if nazwa == "Bez zestawu":
-                # Fiszki bez zestawu tylko od bieżącego użytkownika
                 temp = fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == 0]
+            # Fiszki w zestawach
             else:
-                # Szukaj ID zestawu w różnych źródłach
                 id_zestawu = None
-                
-                # 1. Sprawdź w zestawach użytkownika
                 user_zestaw = zestawy_uzytkownika[zestawy_uzytkownika["nazwa"] == nazwa]
                 if not user_zestaw.empty:
                     id_zestawu = user_zestaw["id"].values[0]
                     temp = fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == id_zestawu]
                 else:
-                    # 2. Sprawdź w globalnej liście zestawów
                     global_zestaw = zestawy_df[zestawy_df["nazwa"] == nazwa]
                     if not global_zestaw.empty:
                         id_zestawu = global_zestaw["id"].values[0]
                         temp = fiszki_df[fiszki_df["id_zestawu"] == id_zestawu]
                     else:
                         continue
-            
             fiszki_z_wybranych = pd.concat([fiszki_z_wybranych, temp], ignore_index=True)
         
         if not fiszki_z_wybranych.empty:
@@ -400,7 +389,7 @@ elif st.session_state.aktywna_strona == "Ucz się":
             )
             fiszki_do_wyboru = fiszki_z_wybranych[fiszki_z_wybranych["etykieta"].isin(wybrane_fiszki)]
         else:
-            st.warning("Brak fiszek w wybranych zestawach. Sprawdź czy:")
+            st.info("Brak fiszek w wybranych zestawach. Sprawdź czy:")
             st.write("- Zestaw nie jest pusty")
             st.write("- Masz dostęp do fiszek w tym zestawie")
             st.write("- Fiszki są przypisane do właściwego zestawu")
@@ -437,7 +426,6 @@ elif st.session_state.aktywna_strona == "Ucz się":
 
 ########################################################################################################################################
 # Strona nauki
-
 elif st.session_state.aktywna_strona == "Sesja nauki":
     st.header(f"Tryb nauki: {st.session_state.tryb_nauki}")
     if st.session_state.fiszki_do_nauki:
@@ -454,21 +442,17 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
         st.session_state.pokaz_podpowiedz = False
         st.session_state.odpowiedzi_uzytkownika = {}
 
-    fiszki = st.session_state.fiszki_do_nauki
-    indeks = st.session_state.indeks_fiszki
-    fiszka = fiszki[indeks]
+    fiszka = st.session_state.fiszki_do_nauki[st.session_state.indeks_fiszki]
 
     # Czasomierz
     if st.session_state.czasomierz:
         czas = int(ti.time() - st.session_state.start_time)
         st.write(f"⏱️ Czas: {czas//60}:{czas%60:02d}")
 
-    st.subheader(f"Fiszka {indeks+1} z {len(fiszki)}")
-
-    tryb = st.session_state.tryb_nauki
+    st.subheader(f"Fiszka {st.session_state.indeks_fiszki+1} z {len(st.session_state.fiszki_do_nauki)}")
 
     zawartosc_fiszki = f"<h3>{fiszka['przod']}</h3>"
-    if st.session_state.odwrocona and tryb != "Test":
+    if st.session_state.odwrocona and st.session_state.tryb_nauki != "Test":
         zawartosc_fiszki = f"<h3>{fiszka['tyl']}</h3>"
         if fiszka["rozwiniecie"]:
             zawartosc_fiszki += f"<p style='font-size:14px;'><i>{fiszka['rozwiniecie']}</i></p>"
@@ -482,18 +466,18 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
                 st.session_state.pokaz_podpowiedz = True
                 st.rerun()
 
-    # --- Tryby ---
-    if tryb == "Klasyczny":
+    # Tryby
+    if st.session_state.tryb_nauki == "Klasyczny":
         if st.button("Odwróć fiszkę"):
             st.session_state.odwrocona = not st.session_state.odwrocona
             st.rerun()
 
-    elif tryb == "Trening":
-        odp = st.text_input("✏️ Twoja odpowiedź:", key=f"odp_{indeks}", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
+    elif st.session_state.tryb_nauki == "Trening":
+        odp = st.text_input("✏️ Twoja odpowiedź:", key=f"odp_{st.session_state.indeks_fiszki}", value=st.session_state.odpowiedzi_uzytkownika.get(st.session_state.indeks_fiszki, ""))
         if odp.strip() != "":
-            st.session_state.odpowiedzi_uzytkownika[indeks] = odp
+            st.session_state.odpowiedzi_uzytkownika[st.session_state.indeks_fiszki] = odp
         if st.button("Sprawdź odpowiedź"):
-            st.session_state.odpowiedzi_uzytkownika[indeks] = odp
+            st.session_state.odpowiedzi_uzytkownika[st.session_state.indeks_fiszki] = odp
             st.session_state.odwrocona = True
             st.rerun()
         if st.session_state.odwrocona:
@@ -504,15 +488,15 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
             else:
                 st.error(f"❌ Błędna. Poprawna to: **{fiszka['tyl']}**")
 
-    elif tryb == "Test":
-        odp = st.text_input("✏️ Twoja odpowiedź:", key=f"odp_{indeks}", value=st.session_state.odpowiedzi_uzytkownika.get(indeks, ""))
+    elif st.session_state.tryb_nauki == "Test":
+        odp = st.text_input("Twoja odpowiedź:", key=f"odp_{st.session_state.indeks_fiszki}", value=st.session_state.odpowiedzi_uzytkownika.get(st.session_state.indeks_fiszki, ""))
         if odp.strip() != "":
-            st.session_state.odpowiedzi_uzytkownika[indeks] = odp
+            st.session_state.odpowiedzi_uzytkownika[st.session_state.indeks_fiszki] = odp
 
     # Nawigacja
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("←", disabled=indeks == 0):
+        if st.button("←", disabled=st.session_state.indeks_fiszki == 0):
             st.session_state.indeks_fiszki -= 1
             st.session_state.odwrocona = False
             st.session_state.pokaz_podpowiedz = False
@@ -522,7 +506,7 @@ elif st.session_state.aktywna_strona == "Sesja nauki":
             st.session_state.aktywna_strona = "Podsumowanie sesji"
             st.rerun()
     with col3:
-        if st.button("→", disabled=indeks == len(fiszki) - 1):
+        if st.button("→", disabled=st.session_state.indeks_fiszki == len(st.session_state.fiszki_do_nauki) - 1):
             st.session_state.indeks_fiszki += 1
             st.session_state.odwrocona = False
             st.session_state.pokaz_podpowiedz = False
@@ -540,11 +524,10 @@ elif st.session_state.aktywna_strona == "Podsumowanie sesji":
     if tryb in ["Test", "Trening"]:
         st.subheader("Wyniki")
 
-        fiszki = st.session_state.fiszki_do_nauki
         odpowiedzi = st.session_state.odpowiedzi_uzytkownika
         poprawne = 0
 
-        for i, fiszka in enumerate(fiszki):
+        for i, fiszka in enumerate(st.session_state.fiszki_do_nauki):
             user_ans = odpowiedzi.get(i, "").strip().lower()
             correct = fiszka["tyl"].strip().lower()
             if user_ans == correct:
@@ -553,7 +536,7 @@ elif st.session_state.aktywna_strona == "Podsumowanie sesji":
             else:
                 st.markdown(f"❌ **{fiszka['przod']}** → {user_ans or '_brak odpowiedzi_'} (poprawna: {fiszka['tyl']})")
 
-        st.write(f"**Wynik końcowy:** {poprawne} / {len(fiszki)}")
+        st.write(f"**Wynik końcowy:** {poprawne} / {len(st.session_state.fiszki_do_nauki)}")
 
     st.markdown("---")
 
@@ -806,12 +789,12 @@ elif st.session_state.aktywna_strona == "Dodaj fiszkę":
 # Strona profilu / logowania
 elif st.session_state.aktywna_strona == "Profil":
     st.header("Profil")
-
     if "zalogowany" not in st.session_state:
         st.session_state.zalogowany = False
     if "id_aktywnego_profilu" not in st.session_state:
         st.session_state.id_aktywnego_profilu = None
 
+    # Jeśli niezalogowany
     if not st.session_state.zalogowany:
         st.subheader("🔐 Zaloguj się")
 
@@ -842,20 +825,15 @@ elif st.session_state.aktywna_strona == "Profil":
             st.session_state.aktywna_strona = "Rejestracja"
             st.rerun()
 
+    # Jeśli zalogowany
     elif st.session_state.zalogowany:
+        nick = profile_df.loc[profile_df["id"] == st.session_state.id_aktywnego_profilu, "nick"].values[0]
 
-    #Dane użytkownika
-        aktywny_id = st.session_state.id_aktywnego_profilu
-        uzytkownik = profile_df[profile_df["id"] == aktywny_id].iloc[0]
-
-        st.subheader("Dane profilu")
-        st.markdown(f"""
-        Nazwa użytkownika: **{uzytkownik['nick']}**
-        """)
+        st.subheader("Dane profilu: {nick}")
 
         #Przycisk edycji
         with st.expander("Edytuj profil"):
-            nowy_nick = st.text_input("Nowa nazwa użytkownika", value=uzytkownik['nick'])
+            nowy_nick = st.text_input("Nowa nazwa użytkownika", value=nick)
             nowe_haslo = st.text_input("Nowe hasło", type="password")
             potwierdz_haslo = st.text_input("Potwierdź nowe hasło", type="password")
 
@@ -865,14 +843,14 @@ elif st.session_state.aktywna_strona == "Profil":
                     st.error("Nazwa użytkownika nie może być pusta.")
                 elif nowe_haslo != potwierdz_haslo:
                     st.error("Hasła się nie zgadzają.")
-                elif nowy_nick != uzytkownik["nick"] and nowy_nick in profile_df["nick"].values:
+                elif nowy_nick != nick and nowy_nick in profile_df["nick"].values:
                     st.error("Taki użytkownik już istnieje.")
                 else:
                     # Aktualizacja
-                    profile_df.loc[profile_df["id"] == aktywny_id, "nick"] = nowy_nick
+                    profile_df.loc[profile_df["id"] == st.session_state.id_aktywnego_profilu, "nick"] = nowy_nick
                     if nowe_haslo.strip():
                         nowe_haslo_shashowane = hash_haslo(nowe_haslo)
-                        profile_df.loc[profile_df["id"] == aktywny_id, "haslo"] = nowe_haslo_shashowane
+                        profile_df.loc[profile_df["id"] == st.session_state.id_aktywnego_profilu, "haslo"] = nowe_haslo_shashowane
 
                     # Zapisz
                     profile_df.to_csv("data/profile.csv", sep=";", index=False)
@@ -884,38 +862,32 @@ elif st.session_state.aktywna_strona == "Profil":
 
         # Statystyki profilu
         st.subheader("Twoje statystyki:")
+        user_stats = statystyki_df[statystyki_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
 
-        # Wczytaj dane statystyczne
-        statystyki_path = "data/statystyki.csv"
-        if os.path.exists(statystyki_path):
-            user_stats = statystyki_df[statystyki_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
-
-            liczba_fiszek = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu].shape[0]
-            liczba_zestawow = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu].shape[0]
-            liczba_sesji = user_stats.shape[0]
-            suma_czasu = user_stats["czas"].sum()
-            sredni_czas = int(user_stats["czas"].mean()) if not user_stats.empty else 0
-
-            testy = user_stats[user_stats["typ"].isin(["Test", "Trening"])].dropna(subset=["wynik"])
-            if not testy.empty:
-                testy["procent"] = (testy["wynik"] / testy["liczba_fiszek"]) * 100
-                sredni_wynik = testy["procent"].mean()
-            else:
-                sredni_wynik = None
-
-            ostatnia_data = user_stats["data"].max() if not user_stats.empty else "Brak danych"
-
-            st.write(f"Fiszek: **{liczba_fiszek}**")
-            st.write(f"Zestawów: **{liczba_zestawow}**")
-            st.write(f"Sesji zakończonych: **{liczba_sesji}**")
-            st.write(f"Łączny czas nauki: **{suma_czasu//60} min {suma_czasu%60} s**")
-            st.write(f"Średni czas sesji: **{sredni_czas//60} min {sredni_czas%60} s**")
-            if sredni_wynik is not None:
-                st.write(f"Średni wynik: **{sredni_wynik:.1f}%**")
-            st.write(f"Ostatnia aktywność: **{ostatnia_data}**")
+        liczba_fiszek = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu].shape[0]
+        liczba_zestawow = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu].shape[0]
+        liczba_sesji = user_stats.shape[0]
+        suma_czasu = user_stats["czas"].sum()
+        sredni_czas = int(user_stats["czas"].mean()) if not user_stats.empty else 0
+        testy = user_stats[user_stats["typ"].isin(["Test", "Trening"])].dropna(subset=["wynik"])
+        if not testy.empty:
+            testy["procent"] = (testy["wynik"] / testy["liczba_fiszek"]) * 100
+            sredni_wynik = testy["procent"].mean()
         else:
-            st.info("Brak danych statystycznych.")
+            sredni_wynik = None
 
+        ostatnia_data = user_stats["data"].max() if not user_stats.empty else "Brak danych"
+
+        st.write(f"Fiszek: **{liczba_fiszek}**")
+        st.write(f"Zestawów: **{liczba_zestawow}**")
+        st.write(f"Sesji zakończonych: **{liczba_sesji}**")
+        st.write(f"Łączny czas nauki: **{suma_czasu//60} min {suma_czasu%60} s**")
+        st.write(f"Średni czas sesji: **{sredni_czas//60} min {sredni_czas%60} s**")
+        if sredni_wynik is not None:
+            st.write(f"Średni wynik: **{sredni_wynik:.1f}%**")
+        st.write(f"Ostatnia aktywność: **{ostatnia_data}**")
+
+        # Wylogowywanie
         if st.button("Wyloguj się"):
             st.session_state.zalogowany = False
             st.session_state.id_aktywnego_profilu = None
