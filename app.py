@@ -6,7 +6,7 @@ Projekt z Uniwersalnych Metod Projektowania Aplikacji Na Urządzenia Mobilne i W
 
 [Któtki opis podsumowujący]
 
-Autorzy: [Hryciuk Aleksandra, Morawiec Victoria, Morchat Filip]
+Autorzy: Hryciuk Aleksandra, Morawiec Victoria, Morchat Filip
 Wersja: 1.0
 """
 ########################################################################################################################################
@@ -47,7 +47,6 @@ st.markdown("""
             background-color: #FAD1D6 !important;
     }
     
-    /* Wycentrowanie tekstu i dzieci w głównym kontenerze */
         [data-testid="stAppViewContainer"] {
             flex-direction: column !important;
             justify-content: center !important;
@@ -72,8 +71,7 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         margin: 0px 0 20px 0;
     }
-    
-    /* Standardowe nagłówki */
+
             
     h2, h3 {
         font-family: 'Lexend Giga' !important;
@@ -95,7 +93,6 @@ st.markdown("""
         transition: all 0.2s ease-in-out;
     }
 
-    /* Hover efekt */
     div.stButton > button:hover {
         background-color: #BA015E;
         transform: scale(1.05);
@@ -109,7 +106,7 @@ st.markdown("""
         color: white !important; 
     }
 
-    /* Responsywny układ przycisków nawigacyjnych */
+    /* Układ przycisków nawigacyjnych */
     @media (max-width: 768px) {
         /* Kontener na przyciski w układzie 2x2 */
         [data-testid="column"] {
@@ -117,7 +114,7 @@ st.markdown("""
             flex: 0 1 50% !important;
         }
         
-        /* Styl przycisków na mobile */
+        /* Styl przycisków*/
         .stButton>button {
             width: 90% !important;
             margin: 5px auto !important;
@@ -265,6 +262,47 @@ if st.session_state.aktywna_strona == "Start":
     # Informacja jeśli nie wybrano profilu
     if st.session_state.id_aktywnego_profilu is None:
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
+    
+    st.markdown("### Wyszukaj zestawy fiszek")
+    fraza = st.text_input("Wpisz słowo kluczowe", placeholder="np. język angielski")
+
+    if fraza:
+        dopasowane_zestawy = zestawy_df[
+            zestawy_df["nazwa"].str.contains(fraza, case=False, na=False) |
+            zestawy_df["opis"].str.contains(fraza, case=False, na=False)
+        ]
+
+        if dopasowane_zestawy.empty:
+            st.info("Brak zestawów spełniających kryteria.")
+        else:
+             for _, zestaw in dopasowane_zestawy.iterrows():
+                # Bezpieczne pobieranie autora
+                autor = "Nieznany"
+                try:
+                    profile_match = profile_df.loc[profile_df["id"] == zestaw["id_profilu"], "nick"]
+                    if not profile_match.empty:
+                        autor = profile_match.values[0]
+                except:
+                    pass
+
+                st.markdown(f"""
+                #### {zestaw['nazwa']}
+                **Opis:** {zestaw['opis']}  
+                **Autor:** {autor}
+                """)
+                
+                liczba_fiszek = fiszki_df[fiszki_df["id_zestawu"] == zestaw["id"]].shape[0]
+                st.write(f"Liczba fiszek w zestawie: {liczba_fiszek}")
+
+                if st.button(f"Ucz się z tego zestawu", key=f"start_{zestaw['id']}"):
+                    st.session_state.aktywna_strona = "Ucz się"
+                    st.session_state.wybrany_zestaw_do_nauki = {
+                        'id': zestaw['id'],
+                        'nazwa': zestaw['nazwa'],
+                        'id_profilu': zestaw['id_profilu']
+                    }
+                    st.rerun()
+
 
 ########################################################################################################################################
 # Strona konfiguracji nauki
@@ -294,26 +332,66 @@ elif st.session_state.aktywna_strona == "Ucz się":
     st.markdown("---")
 
     # Wybór zestawów do nauki
+    
     zestawy_uzytkownika = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
     fiszki_uzytkownika = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
 
     wszystkie_opcje_zestawow = zestawy_uzytkownika["nazwa"].tolist()
-    if not fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == 0].empty:
-        wszystkie_opcje_zestawow.append("Bez zestawu")
 
-    wybrane_zestawy = st.multiselect("Wybierz zestawy do nauki:", options=wszystkie_opcje_zestawow)
+    default_wybrane_zestawy = []
+    if 'wybrany_zestaw_do_nauki' in st.session_state:
+        wybrany = st.session_state.wybrany_zestaw_do_nauki
+        # Jeśli to dict z pola wyszukiwarki, dodaj jego nazwę do opcji
+        if isinstance(wybrany, dict):
+            if wybrany['nazwa'] not in wszystkie_opcje_zestawow:
+                wszystkie_opcje_zestawow.append(wybrany['nazwa'])
+            default_wybrane_zestawy = [wybrany['nazwa']]
+        elif isinstance(wybrany, list):
+            # Lista z sesji – tylko te, które są w dostępnych opcjach
+            default_wybrane_zestawy = [z for z in wybrany if z in wszystkie_opcje_zestawow]
+        else:
+            default_wybrane_zestawy = []
+    else:
+        default_wybrane_zestawy = []
+
+    # Wyświetl Multiselect
+    wybrane_zestawy = st.multiselect(
+        "Wybierz zestawy do nauki:",
+        options=wszystkie_opcje_zestawow,
+        default=default_wybrane_zestawy
+    )
+
+    st.session_state.wybrany_zestaw_do_nauki = wybrane_zestawy
 
     # Wybór konkretnych fiszek do nauki
     fiszki_do_wyboru = pd.DataFrame()
     if wybrane_zestawy:
         fiszki_z_wybranych = pd.DataFrame()
+        
         for nazwa in wybrane_zestawy:
             if nazwa == "Bez zestawu":
+                # Fiszki bez zestawu tylko od bieżącego użytkownika
                 temp = fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == 0]
             else:
-                id_zestawu = zestawy_uzytkownika[zestawy_uzytkownika["nazwa"] == nazwa]["id"].values[0]
-                temp = fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == id_zestawu]
+                # Szukaj ID zestawu w różnych źródłach
+                id_zestawu = None
+                
+                # 1. Sprawdź w zestawach użytkownika
+                user_zestaw = zestawy_uzytkownika[zestawy_uzytkownika["nazwa"] == nazwa]
+                if not user_zestaw.empty:
+                    id_zestawu = user_zestaw["id"].values[0]
+                    temp = fiszki_uzytkownika[fiszki_uzytkownika["id_zestawu"] == id_zestawu]
+                else:
+                    # 2. Sprawdź w globalnej liście zestawów
+                    global_zestaw = zestawy_df[zestawy_df["nazwa"] == nazwa]
+                    if not global_zestaw.empty:
+                        id_zestawu = global_zestaw["id"].values[0]
+                        temp = fiszki_df[fiszki_df["id_zestawu"] == id_zestawu]
+                    else:
+                        continue
+            
             fiszki_z_wybranych = pd.concat([fiszki_z_wybranych, temp], ignore_index=True)
+        
         if not fiszki_z_wybranych.empty:
             fiszki_z_wybranych["etykieta"] = fiszki_z_wybranych["przod"] + " ➝ " + fiszki_z_wybranych["tyl"]
             wybrane_fiszki = st.multiselect(
@@ -322,7 +400,10 @@ elif st.session_state.aktywna_strona == "Ucz się":
             )
             fiszki_do_wyboru = fiszki_z_wybranych[fiszki_z_wybranych["etykieta"].isin(wybrane_fiszki)]
         else:
-            st.info("Brak fiszek w wybranych zestawach.")
+            st.warning("Brak fiszek w wybranych zestawach. Sprawdź czy:")
+            st.write("- Zestaw nie jest pusty")
+            st.write("- Masz dostęp do fiszek w tym zestawie")
+            st.write("- Fiszki są przypisane do właściwego zestawu")
     else:
         st.info("Wybierz co najmniej jeden zestaw, aby zobaczyć fiszki.")
 
@@ -763,7 +844,7 @@ elif st.session_state.aktywna_strona == "Profil":
 
     elif st.session_state.zalogowany:
 
-    # ➕ Dane użytkownika
+    #Dane użytkownika
         aktywny_id = st.session_state.id_aktywnego_profilu
         uzytkownik = profile_df[profile_df["id"] == aktywny_id].iloc[0]
 
@@ -772,7 +853,7 @@ elif st.session_state.aktywna_strona == "Profil":
         Nazwa użytkownika: **{uzytkownik['nick']}**
         """)
 
-        # ➕ Przycisk edycji
+        #Przycisk edycji
         with st.expander("Edytuj profil"):
             nowy_nick = st.text_input("Nowa nazwa użytkownika", value=uzytkownik['nick'])
             nowe_haslo = st.text_input("Nowe hasło", type="password")
@@ -790,33 +871,24 @@ elif st.session_state.aktywna_strona == "Profil":
                     # Aktualizacja
                     profile_df.loc[profile_df["id"] == aktywny_id, "nick"] = nowy_nick
                     if nowe_haslo.strip():
-                        profile_df.loc[profile_df["id"] == aktywny_id, "haslo"] = nowe_haslo
+                        nowe_haslo_shashowane = hash_haslo(nowe_haslo)
+                        profile_df.loc[profile_df["id"] == aktywny_id, "haslo"] = nowe_haslo_shashowane
 
                     # Zapisz
                     profile_df.to_csv("data/profile.csv", sep=";", index=False)
 
                     st.success("Dane profilu zostały zaktualizowane.")
                     st.session_state.nick = nowy_nick
-                    st.rerun()
 
-        if st.button("Wyloguj się"):
-            st.session_state.zalogowany = False
-            st.session_state.id_aktywnego_profilu = None
-            if "id_aktywnego_profilu" in ciasteczka:
-                ciasteczka["id_aktywnego_profilu"] = str(st.session_state.id_aktywnego_profilu)
-                ciasteczka.save()
-
-            st.success("Wylogowano pomyślnie.")
-            st.rerun()
+                st.rerun()
 
         # Statystyki profilu
         st.subheader("Twoje statystyki:")
 
         # Wczytaj dane statystyczne
-        stat_path = "data/statystyki.csv"
-        if os.path.exists(stat_path):
-            stat_df = pd.read_csv(stat_path, sep=";")
-            user_stats = stat_df[stat_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+        statystyki_path = "data/statystyki.csv"
+        if os.path.exists(statystyki_path):
+            user_stats = statystyki_df[statystyki_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
 
             liczba_fiszek = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu].shape[0]
             liczba_zestawow = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu].shape[0]
@@ -843,6 +915,16 @@ elif st.session_state.aktywna_strona == "Profil":
             st.write(f"Ostatnia aktywność: **{ostatnia_data}**")
         else:
             st.info("Brak danych statystycznych.")
+
+        if st.button("Wyloguj się"):
+            st.session_state.zalogowany = False
+            st.session_state.id_aktywnego_profilu = None
+            if "id_aktywnego_profilu" in ciasteczka:
+                ciasteczka["id_aktywnego_profilu"] = str(st.session_state.id_aktywnego_profilu)
+                ciasteczka.save()
+
+            st.success("Wylogowano pomyślnie.")
+            st.rerun()
 
 ########################################################################################################################################
 # Strona rejestracji
