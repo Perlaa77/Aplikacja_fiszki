@@ -63,10 +63,10 @@ st.markdown("""
 
         .gradient-text {
         font-family: 'Lexend Giga', sans-serif;
-        font-size: 64px;
+        font-size: 50px;
         font-weight: 350;
         text-align: center;
-        background: linear-gradient(90deg, #FFCCE5 5%, #cc0066 80%, #cc0066 100%);
+        background: #cc0066;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0px 0 20px 0;
@@ -197,7 +197,7 @@ def zaladuj_dane_z_CSV(sciezka, kolumny):
         return pd.DataFrame(columns=kolumny)
     
 profile_df = zaladuj_dane_z_CSV("data/profile.csv", ["id", "nick", "haslo"])
-zestawy_df = zaladuj_dane_z_CSV("data/zestawy.csv", ["id", "nazwa", "opis", "id_profilu"])
+zestawy_df = zaladuj_dane_z_CSV("data/zestawy.csv", ["id", "nazwa", "opis", "id_profilu", "publiczny"])
 fiszki_df = zaladuj_dane_z_CSV("data/fiszki.csv", ["id", "przod", "podpowiedz", "tyl", "rozwiniecie", "id_profilu", "id_zestawu"])
 statystyki_df = zaladuj_dane_z_CSV("data/statystyki.csv", ["id_profilu", "data", "czas", "typ", "wynik", "liczba_fiszek"])
 
@@ -264,8 +264,10 @@ if st.session_state.aktywna_strona == "Start":
         fraza = st.text_input("Wpisz słowo kluczowe", placeholder="np. język angielski")
         if fraza:
             dopasowane_zestawy = zestawy_df[
+                (zestawy_df["publiczny"] == True) & (
                 zestawy_df["nazwa"].str.contains(fraza, case=False, na=False) |
                 zestawy_df["opis"].str.contains(fraza, case=False, na=False)
+                )
             ]
             if dopasowane_zestawy.empty:
                 st.info("Brak zestawów spełniających kryteria.")
@@ -330,7 +332,7 @@ elif st.session_state.aktywna_strona == "Ucz się":
     st.markdown("---")
 
     # Wybór zestawów do nauki
-    zestawy_uzytkownika = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+    zestawy_uzytkownika = zestawy_df[    (zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu) | (zestawy_df["publiczny"] == True)]
     fiszki_uzytkownika = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
     wszystkie_opcje_zestawow = zestawy_uzytkownika["nazwa"].tolist()
 
@@ -674,6 +676,10 @@ elif st.session_state.aktywna_strona == "Dodaj zestaw":
     # Formularz dodawania/edytowania zestawu
     with st.form("add_set_form"):
         nazwa = st.text_input("Nazwa zestawu", value=zestaw_do_edycji["nazwa"] if tryb_edycji else "")
+        publiczny = st.checkbox(
+        "Publiczny zestaw",
+        value=zestaw_do_edycji["publiczny"] if tryb_edycji else False
+    )
         col_zapisz, col_anuluj_usun = st.columns(2)
         with col_zapisz:
             submitted = st.form_submit_button("Zapisz zestaw")
@@ -688,13 +694,15 @@ elif st.session_state.aktywna_strona == "Dodaj zestaw":
             else:
                 if tryb_edycji:
                     zestawy_df.loc[zestawy_df["id"] == zestaw_do_edycji["id"], "nazwa"] = nazwa
+                    zestawy_df.loc[zestawy_df["id"] == zestaw_do_edycji["id"], "publiczny"] = publiczny
                     st.success("Zestaw został pomyślnie zaktualizowany.")
                 else:
                     new_id = zestawy_df["id"].max() + 1 if not zestawy_df.empty else 1
                     new_row = pd.DataFrame([{
                         "id": new_id,
                         "nazwa": nazwa,
-                        "id_profilu": st.session_state.id_aktywnego_profilu
+                        "id_profilu": st.session_state.id_aktywnego_profilu,
+                        "publiczny": publiczny
                     }])
                     zestawy_df = pd.concat([zestawy_df, new_row], ignore_index=True)
                     st.success("Nowy zestaw został pomyślnie dodany.")
