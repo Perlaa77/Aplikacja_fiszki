@@ -342,11 +342,15 @@ elif st.session_state.aktywna_strona == "Ucz się":
                 wszystkie_opcje_zestawow.append(wybrany['nazwa'])
             default_wybrane_zestawy = [wybrany['nazwa']]
         elif isinstance(wybrany, list):
-            default_wybrane_zestawy = [z for z in wybrany if z in wszystkie_opcje_zestawow]
-        else:
-            default_wybrane_zestawy = []
-    else:
-        default_wybrane_zestawy = []
+            for z in wybrany:
+                if isinstance(z, dict):
+                    if z['nazwa'] not in wszystkie_opcje_zestawow:
+                        wszystkie_opcje_zestawow.append(z['nazwa'])
+                    default_wybrane_zestawy.append(z['nazwa'])
+                elif isinstance(z, str):  
+                    if z not in wszystkie_opcje_zestawow:
+                        wszystkie_opcje_zestawow.append(z)
+                    default_wybrane_zestawy.append(z)
 
     # Wyświetlenie Multiselect
     wybrane_zestawy = st.multiselect(
@@ -354,7 +358,19 @@ elif st.session_state.aktywna_strona == "Ucz się":
         options=wszystkie_opcje_zestawow,
         default=default_wybrane_zestawy
     )
-    st.session_state.wybrany_zestaw_do_nauki = wybrane_zestawy
+    zestawy_dict_list = []
+    for nazwa in wybrane_zestawy:
+        zestaw = zestawy_df[zestawy_df["nazwa"] == nazwa]
+        if not zestaw.empty:
+            rekord = zestaw.iloc[0]
+            zestawy_dict_list.append({
+                "id": rekord["id"],
+                "id_profilu": rekord["id_profilu"],
+                "nazwa": rekord["nazwa"]
+            })
+
+    # zapisz jako listę dictów
+    st.session_state.wybrany_zestaw_do_nauki = zestawy_dict_list
 
     # Wybór konkretnych fiszek do nauki
     fiszki_do_wyboru = pd.DataFrame()
@@ -829,7 +845,7 @@ elif st.session_state.aktywna_strona == "Profil":
     elif st.session_state.zalogowany:
         nick = profile_df.loc[profile_df["id"] == st.session_state.id_aktywnego_profilu, "nick"].values[0]
 
-        st.subheader("Dane profilu: {nick}")
+        st.subheader(f"Dane profilu: {nick}")
 
         #Przycisk edycji
         with st.expander("Edytuj profil"):
