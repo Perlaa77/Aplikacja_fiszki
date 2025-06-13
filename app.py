@@ -25,6 +25,7 @@ import numpy as np
 import bcrypt as bc
 import streamlit_cookies_manager as stcm
 import time as ti
+from dateutil import parser
 
 # Inicjalizacja ciasteczek
 ciasteczka = stcm.EncryptedCookieManager(
@@ -201,6 +202,7 @@ zestawy_df = zaladuj_dane_z_CSV("data/zestawy.csv", ["id", "nazwa", "opis", "id_
 fiszki_df = zaladuj_dane_z_CSV("data/fiszki.csv", ["id", "przod", "podpowiedz", "tyl", "rozwiniecie", "id_profilu", "id_zestawu"])
 statystyki_df = zaladuj_dane_z_CSV("data/statystyki.csv", ["id_profilu", "data", "czas", "typ", "wynik", "liczba_fiszek"])
 
+
 # Stan aplikacji - ustawienie aktywnej strony przy pierwszym uruchomieniu
 if "aktywna_strona" not in st.session_state:
     st.session_state.aktywna_strona = "Start"
@@ -331,9 +333,30 @@ elif st.session_state.aktywna_strona == "Ucz się":
 
     st.markdown("---")
 
+
+    filtr_zestawow = st.radio(
+    "Pokaż zestawy:",
+    options=["Wszystkie dostępne", "Tylko moje"],
+    index=0,
+    horizontal=True
+    )
+
+    if filtr_zestawow == "Tylko moje":
+        zestawy_uzytkownika = zestawy_df[zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+    else:
+        zestawy_uzytkownika = zestawy_df[
+            (zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu) |
+            (zestawy_df["publiczny"] == True)
+        ]
+
     # Wybór zestawów do nauki
-    zestawy_uzytkownika = zestawy_df[    (zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu) | (zestawy_df["publiczny"] == True)]
-    fiszki_uzytkownika = fiszki_df[fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu]
+    #zestawy_uzytkownika = zestawy_df[    (zestawy_df["id_profilu"] == st.session_state.id_aktywnego_profilu) | (zestawy_df["publiczny"] == True)]
+    # Fiszki z własnych i publicznych zestawów
+    fiszki_uzytkownika = fiszki_df[
+        (fiszki_df["id_profilu"] == st.session_state.id_aktywnego_profilu) |
+        (fiszki_df["id_zestawu"].isin(zestawy_uzytkownika["id"]))
+]
+
     wszystkie_opcje_zestawow = zestawy_uzytkownika["nazwa"].tolist()
 
     default_wybrane_zestawy = []
@@ -937,7 +960,19 @@ elif st.session_state.aktywna_strona == "Profil":
         st.write(f"Średni czas sesji: **{sredni_czas//60} min {sredni_czas%60} s**")
         if sredni_wynik is not None:
             st.write(f"Średni wynik: **{sredni_wynik:.1f}%**")
-        st.write(f"Ostatnia aktywność: **{ostatnia_data}**")
+
+        #konwersja daty
+        user_stats = statystyki_df[statystyki_df["id_profilu"] == st.session_state.id_aktywnego_profilu].copy()
+        user_stats["data"] = pd.to_datetime(user_stats["data"], format="%d.%m.%Y %H:%M", errors="coerce")
+        user_stats["data"] = user_stats["data"].combine_first(
+            statystyki_df.loc[user_stats.index, "data"]
+            .apply(lambda x: parser.parse(x) if isinstance(x, str) else pd.NaT)
+        )
+        ostatnia_data = user_stats["data"].max()
+        ostatnia_data_str = ostatnia_data.strftime("%d.%m.%Y %H:%M") if pd.notnull(ostatnia_data) else "Brak danych"
+        st.write(f"Ostatnia aktywność: **{ostatnia_data_str}**")
+
+
 
         # Wylogowywanie
         if st.button("Wyloguj się"):
