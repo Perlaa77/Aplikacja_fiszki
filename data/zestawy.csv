@@ -1,6 +1,6 @@
 id;nazwa;opis;id_profilu;publiczny
-1;Angielski - Podstawowe słówka;Podstawowe słówka codziennego użytku;1;False
-2;Angielski - Zwierzęta;Zwierzęta po ang;1;False
+1;Angielski - Podstawowe słówka;Podstawowe słówka codziennego użytku;1;True
+2;Angielski - Zwierzęta;Zwierzęta po ang;1;True
 3;Matma podstawy;Podstawowe pojęcia matematyczne;2;True
 4;Geometria;Figurowa masakra;2;True
 5;Kolorki;Rodzaje i odcienie kolorów;3;True

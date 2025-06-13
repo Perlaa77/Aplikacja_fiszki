@@ -557,6 +557,18 @@ elif st.session_state.aktywna_strona == "Podsumowanie sesji":
         st.write(f"**Wynik końcowy:** {poprawne} / {len(st.session_state.fiszki_do_nauki)}")
 
     st.markdown("---")
+    # Zapis do statystyki.csv
+    nowy_rekord = {
+        "id_profilu": st.session_state.id_aktywnego_profilu,
+        "data": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "czas": int(czas),
+        "typ": tryb,
+        "wynik": int(poprawne) if tryb in ["Test", "Trening"] else None,
+        "liczba_fiszek": len(st.session_state.fiszki_do_nauki)
+    }
+
+    # Dodaj nowy rekord i zapisz
+    pd.DataFrame([nowy_rekord]).to_csv("data/statystyki.csv", sep=";", mode="a", header=False, index=False)
 
     if st.button("Wróć do konfiguracji"):
         st.session_state.aktywna_strona = "Ucz się"
