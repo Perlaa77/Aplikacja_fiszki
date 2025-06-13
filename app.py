@@ -305,6 +305,14 @@ if st.session_state.aktywna_strona == "Start":
     else:
         st.header("👋 Cześć!")
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
+    st.markdown("---")
+
+    st.write("**Hej, jesteś na stronie do nauki fiszek Fistaszki!🥜**")
+    st.write("\n Po tej stronie nawiguje się za pomocą czterech przycisków:")
+    st.write("\n **Start** - to strona główna, na której możesz wyszukać po nazwie zestawy fiszek od innych użytkowników ")
+    st.write("\n **Ucz się** - tutaj możesz się uczyć z wybranego zestawu fiszek. Możesz to zrobić za pomocą 3 trybów: Klasyczny, Trening i Test. Masz też opcję włączenia czasomierzu!") 
+    st.write("\n **Fiszki** - widok edycji zestawów i fiszek. Możesz tu skonfigurować wszystkie swoje zestawy!")
+    st.write("\n **Profil** - to strona, gdzie możesz dokonać edycji swoich danych oraz poniżej możesz zobaczyć statystyki swojego konta lub się wylogować.")
     
 ########################################################################################################################################
 # Strona konfiguracji nauki
