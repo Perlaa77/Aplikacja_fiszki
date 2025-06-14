@@ -1,10 +1,14 @@
 """
 Fistaszki
-Aplikacja do nauki z fiszkami.
+Aplikacja internetowa do nauki z fiszek.
 
 Projekt z Uniwersalnych Metod Projektowania Aplikacji Na Urządzenia Mobilne i Wbudowane
 
-[Któtki opis podsumowujący]
+Wszystkie funkcjonalności apliakcji dostępne są dla użytkowników zalogowanych na swój profil, użytkownicy niezalogowani mogą się zarejestrować oraz zalogować.
+Strona główna pokazuje skrócony opis dostępnych funkcji oraz wyszukiwanie zestawów własnych i publicznych po nazwie.
+Strona nauki pozwala na rozpoczęcie sesji nauki w wybranym trybie z użyciem wybranych zestawów i fiszek.
+Strona z zestawami fiszek daje możliwość zarządzania/twrzenia/usuwania/edytowania własnymi zestawami oraz poszczególnymi fiszkami.
+Strona profilu daje dostęp do logowania/wylogowania oraz rejestracji, a po zalogowaniu ukazuje także statystyki profilu i możliwość zmiany nazwy czy hasła.
 
 Autorzy: Hryciuk Aleksandra, Morawiec Victoria, Morchat Filip
 Wersja: 1.0
@@ -307,12 +311,13 @@ if st.session_state.aktywna_strona == "Start":
         st.info("Aby korzystać z pełnej funkcjonalności aplikacji, przejdź do zakładki **Profil** i wybierz lub utwórz profil.")
     st.markdown("---")
 
-    st.write("**Hej, jesteś na stronie do nauki fiszek Fistaszki!🥜**")
-    st.write("\n Po tej stronie nawiguje się za pomocą czterech przycisków:")
-    st.write("\n **Start** - to strona główna, na której możesz wyszukać po nazwie zestawy fiszek od innych użytkowników ")
-    st.write("\n **Ucz się** - tutaj możesz się uczyć z wybranego zestawu fiszek. Możesz to zrobić za pomocą 3 trybów: Klasyczny, Trening i Test. Masz też opcję włączenia czasomierzu!") 
-    st.write("\n **Fiszki** - widok edycji zestawów i fiszek. Możesz tu skonfigurować wszystkie swoje zestawy!")
-    st.write("\n **Profil** - to strona, gdzie możesz dokonać edycji swoich danych oraz poniżej możesz zobaczyć statystyki swojego konta lub się wylogować.")
+    # Opis zakładek
+    st.write("**Hej, jesteś na stronie do nauki z fiszek - Fistaszki!🥜**")
+    st.write("Nawiguj po stronie za pomocą czterech przycisków:")
+    st.write("**Start** - to strona główna, na której możesz wyszukać po nazwie zestawy fiszek od innych użytkowników.")
+    st.write("**Ucz się** - tutaj możesz się uczyć z wybranych zestawów i fiszek. Masz do wyboru trzy tryby: Klasyczny, Trening i Test. Możesz też włączyć czasomierz.") 
+    st.write("**Fiszki** - możesz tu przeglądać i konfigurować wszystkie swoje zestawy i fiszki.")
+    st.write("**Profil** - znajdziesz tutaj swoje statystyki i opcje profilu oraz możliwość rejestracji i logowania.")
     
 ########################################################################################################################################
 # Strona konfiguracji nauki
