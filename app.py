@@ -4,10 +4,10 @@ Aplikacja internetowa do nauki z fiszek.
 
 Projekt z Uniwersalnych Metod Projektowania Aplikacji Na Urządzenia Mobilne i Wbudowane
 
-Wszystkie funkcjonalności apliakcji dostępne są dla użytkowników zalogowanych na swój profil, użytkownicy niezalogowani mogą się zarejestrować oraz zalogować.
-Strona główna pokazuje skrócony opis dostępnych funkcji oraz wyszukiwanie zestawów własnych i publicznych po nazwie.
+Wszystkie funkcjonalności aplikacji dostępne są dla użytkowników zalogowanych na swój profil. Użytkownicy niezalogowani mogą się zarejestrować oraz zalogować.
+Strona główna pokazuje skrócony opis dostępnych funkcjonalności oraz wyszukiwanie zestawów własnych i publicznych po nazwie.
 Strona nauki pozwala na rozpoczęcie sesji nauki w wybranym trybie z użyciem wybranych zestawów i fiszek.
-Strona z zestawami fiszek daje możliwość zarządzania/twrzenia/usuwania/edytowania własnymi zestawami oraz poszczególnymi fiszkami.
+Strona z zestawami fiszek daje możliwość tworzenia/usuwania/edytowania/zarządzania własnymi zestawami oraz poszczególnymi fiszkami.
 Strona profilu daje dostęp do logowania/wylogowania oraz rejestracji, a po zalogowaniu ukazuje także statystyki profilu i możliwość zmiany nazwy czy hasła.
 
 Autorzy: Hryciuk Aleksandra, Morawiec Victoria, Morchat Filip
