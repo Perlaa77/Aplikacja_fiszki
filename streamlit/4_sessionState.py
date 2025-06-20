@@ -1,5 +1,9 @@
 import streamlit as st
 
+st.set_page_config(
+    page_title = "Przykład 4"
+)
+
 # Session_state sluzy do zapisywania danych
 # miedzy ponownymy renderami aplikacji
 
