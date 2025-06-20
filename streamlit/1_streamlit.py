@@ -1,5 +1,5 @@
 # Aby uruchomić program wykorzystujący Streamlit należy w konsoli wpisać: streamlit run <nazwa_pliku>.py
-# Np. do uruchomienia tego kodu należy wpisać: streamlit run 1_witaj.py
+# Np. do uruchomienia tego kodu należy wpisać: streamlit run 1_streamlit.py
 # Należy pamiętać, że w konsoli trzeba znajdować się w tym samym katalogu co program, który chce się uruchomić.
 
 # Import Streamlit

@@ -2,7 +2,7 @@ import streamlit as st
 import time as ti # Biblioteka wykorzystywana do upływu czasu
 
 st.set_page_config(
-    page_title = "Przykład 12",
+    page_title = "Przykład 10",
     layout="wide"
 )
 

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd # Biblioteka Pandas
 
 st.set_page_config(
-    page_title = "Przykład 10",
+    page_title = "Przykład 9",
     layout="wide"
 )
 
@@ -47,4 +47,4 @@ if uploaded_file:
     st.download_button("Pobierz dane jako plik CSV", data=dataframe.to_csv(index=False).encode('utf-8'), file_name="data.csv", mime="text/csv")
 
 else:
-    st.write("Wybierz przygotowany plik przykładowy 'data_10.csv', aby zobaczyć możliwości łączenia Streamlit z Pandas.")
+    st.write("Wybierz przygotowany plik przykładowy 'data_9.csv', aby zobaczyć możliwości łączenia Streamlit z Pandas.")

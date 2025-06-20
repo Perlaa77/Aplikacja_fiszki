@@ -1,6 +1,6 @@
 import streamlit as st
 
-#pip install streamlit-option-menu - konieczne, by działał navigation bar, sidebar, container
+# pip install streamlit-option-menu - konieczne, by działał navigation bar, sidebar, container
 from streamlit_option_menu import option_menu
 
 st.set_page_config(
