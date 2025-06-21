@@ -9,6 +9,7 @@ st.set_page_config(
 
 st.write("Przykład użycia sidebar, expander, container w Streamlit.")
 
+#SIdebar - pasek boczny, którym można nawigować po aplikacji
 with st.sidebar:
     selected = option_menu(
         menu_title = "Menu",
@@ -21,9 +22,12 @@ with st.sidebar:
 
 if selected == "Wybór motywu":
     st.write("Tu możesz wybrać motyw aplikacji.")
+    # Expander - rozwijane menu, które można użyć do ukrycia lub pokazania dodatkowych informacji
     with st.expander("Ustawienia motywu"):
         theme = st.selectbox("Wybierz motyw", ["Ciemny", "Jasny"])
+        # theme - zmienna przechowująca wybrany motyw
         if theme == "Jasny":
+            # markdown - modyfiukuje wygląd aplikacji, można użyć do zmiany kolorów, czcionek itp.
             st.markdown("""
             <style>
             .stApp{background-color: white; color: black;}
@@ -42,6 +46,7 @@ if selected == "Wybór motywu":
             st.write("Wybrano motyw ciemny.")   
 if selected == "Container":
     st.title("Container w Streamlit")
+    # Container - kontener, który pozwala na grupowanie elementów w aplikacji
     with st.container(border = True):
         st.write("To jest przykładowa aplikacja Streamlit, a konkretniej przykład użycia sidebar, expander i container.")
         st.write("To jest strona o nas.")
