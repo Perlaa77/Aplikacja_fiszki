@@ -1,29 +1,28 @@
 import streamlit as st
 
 # Tytuł aplikacji
-st.title("Przykład JavaScript w Streamlit")
+st.title("Użycie Markdown w Streamlit")
 
-# Przykład wstrzyknięcia JavaScriptu przez st.markdown
-# Parametr unsafe_allow_html=True pozwala na użycie tagów <script> i innych elementów HTML
+# Użycie Markdown do wstawienia sformatowanej zawartości HTML
+# UWAGA: nie używamy <script>, tylko czysty HTML + CSS (inline)
 st.markdown("""
-    <h3>Dynamiczny czas z JavaScript</h3>
-    <p>Ten czas został wygenerowany za pomocą JavaScript:</p>
-    <p id="time"></p>
-
-    <script>
-    // Prosty skrypt, który wyświetla bieżący czas i aktualizuje go co sekundę
-    function updateTime() {
-        var now = new Date();
-        document.getElementById("time").innerText = now.toLocaleTimeString();
-    }
-    setInterval(updateTime, 1000);
-    updateTime(); // wywołanie początkowe
-    </script>
+<div style="padding: 1em; border-radius: 10px; background-color: #f0f8ff; border: 1px solid #add8e6;">
+    <h3 style="color: #005f73;">Informacja</h3>
+    <p style="font-size: 16px;">
+        To jest <b>przykład użycia markdown z HTML</b> w Streamlit.
+        Możemy stylować tekst, używać emoji i formatować tło.
+    </p>
+</div>
 """, unsafe_allow_html=True)
 
-# Dalsze komponenty Streamlit działają jak zwykle
-st.write("Pozostałe komponenty Streamlit nadal działają poprawnie.")
+# Zwykłe użycie Markdown bez HTML
+st.markdown("### Lista zadań")
+st.markdown("""
+- Punkt pierwszy
+- Punkt drugi
+- Punkt trzeci
+""")
 
-# Przycisk do pokazania interakcji z Pythonem
-if st.button("Kliknij mnie"):
-    st.success("Przycisk został kliknięty — to działa po stronie Pythona.")
+# Standardowy komponent Streamlit
+if st.checkbox("Pokaż więcej"):
+    st.info("Tutaj znajduje się dodatkowa informacja.")
