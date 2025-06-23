@@ -6,7 +6,7 @@ st.set_page_config(
 
 st.write("Krótki przykład użycia przycisków, pól tekstowych, checkboxów, przycisków radiowych i pól numerycznych.")
 
-# form - umożliwia tworzenie formularzy, które można wysłać po kliknięciu przycisku; wysyła dane jednocześnie po zatwierdzeniu przyciskiem 
+# Form - umożliwia tworzenie formularzy, które można wysłać po kliknięciu przycisku; wysyła dane jednocześnie po zatwierdzeniu przyciskiem 
 # (nie uruchamia przetwarzania przy każdej zmianie danych, tylko raz po kliknięciu przycisku)
 with st.form("formularz"):
 

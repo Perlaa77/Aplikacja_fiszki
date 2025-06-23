@@ -7,13 +7,13 @@ st.set_page_config(
 st.write("Krótki przykład użycia kolumn, wierszy i suwaka.")
 st.write("Wolisz psy, czy kotki?")
 
-# container - umożliwia grupowanie elementów w aplikacji
+# Container - umożliwia grupowanie elementów w aplikacji
 row1 = st.container()
 
-# row - umożliwia podział strony na wiersze
+# Row - umożliwia podział strony na wiersze
 with row1:
     st.write("Wybierz swoje ulubione zwierzę:")
-    # columns - umożliwia podział strony na kolumny
+    # Columns - umożliwia podział strony na kolumny
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("Wolę pieski!"):
@@ -26,9 +26,9 @@ with row1:
             st.write("Chomiki są super!")
 row2 = st.container()
 with row2:
-    # slider - umożliwia wybór wartości z zakresu
+    # Slider - umożliwia wybór wartości z zakresu
     font_size = st.slider("Rozmiar czcionki:", 10, 100, 20)
 row3 = st.container()
 with row3:
-    # wartość slidera jest używana do ustawienia rozmiaru czcionki w napisie
+    # Wartość slidera jest używana do ustawienia rozmiaru czcionki w napisie
     st.write(f'<span style="font-size:{font_size}px">UwU</span>', unsafe_allow_html=True)

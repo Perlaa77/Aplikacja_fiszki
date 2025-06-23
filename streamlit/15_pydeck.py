@@ -2,6 +2,11 @@ import streamlit as st
 import pydeck as pdk
 import pandas as pd
 
+st.set_page_config(
+    page_title = "Przykład 15"
+)
+
+
 # Ustawienie tytułu aplikacji
 st.title("Mapa z punktami przy użyciu Pydeck")
 

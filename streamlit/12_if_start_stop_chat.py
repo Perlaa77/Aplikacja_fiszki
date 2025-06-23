@@ -1,5 +1,10 @@
 import streamlit as st
 
+st.set_page_config(
+    page_title = "Przykład 12"
+)
+
+
 # Tytuł aplikacji
 st.title("Demo funkcji Streamlit")
 
